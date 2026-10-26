@@ -51,7 +51,7 @@ export function evidenceCsv(items: ExportComponent[]): string {
       row([
         a.sku, a.component, a.material, a.weightG, supported ? a.recycledPct : "", recycledClaim(a), a.evidenceRef ?? "", a.supplier,
         evidenceStatus(a), a.version, it.cycleName, `${a.sourceFile}:${a.sourceLine}`,
-        it.decision ? DECISION_ES[it.decision.choice] + (it.decision.bulk ? " (en bloque)" : "") : "coincidió sin intervención",
+        it.decision ? DECISION_ES[it.decision.choice] + (it.decision.bulk ? " (en bloque)" : "") : it.approved.version === 1 ? "aprobada en la base sin excepción" : "coincidió sin intervención",
         it.decision?.reason ?? "", it.openRequest ? "pendiente de proveedor (se conserva el valor anterior)" : "vigente",
         it.singleReview ? "revisión por una sola persona" : "revisión por dos personas",
       ]),
