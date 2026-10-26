@@ -48,7 +48,7 @@ function ExceptionCard({ ex, cycleId, draft, decided }: { ex: Exception; cycleId
   return (
     <li id={`ex-${encodeURIComponent(ex.key)}`} className={`rounded-md border bg-white p-4 ${decided ? "border-green-300" : "border-slate-300"}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="font-semibold">{ex.sku} · {ex.component}</h3>
+        <h3 className="font-semibold">{ex.sku || "(sin SKU)"} · {ex.component}</h3>
         <span className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-900">{KIND_LABEL[ex.kind]}</span>
         {ex.large && ex.kind === "changed" && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs">Cambio grande</span>}
         {bulkEligible(ex) && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs">Cambio menor</span>}
@@ -101,6 +101,7 @@ export default async function CyclePage({ params }: { params: Promise<{ id: stri
   incoming.forEach((r) => byFile.set(r.sourceFile, (byFile.get(r.sourceFile) ?? 0) + 1));
   const ordered = [...rec.exceptions].sort((a, b) => Number(decisions.has(a.key)) - Number(decisions.has(b.key)) || (a.key < b.key ? -1 : 1));
   const baselineMode = rec.mode === "baseline";
+  const removedCount = rec.exceptions.filter((e) => e.kind === "removed").length;
 
   return (
     <Shell email={user.email} wide>
@@ -115,6 +116,11 @@ export default async function CyclePage({ params }: { params: Promise<{ id: stri
           ? "Este es el primer ciclo: lo que apruebes aquí será la base (versión 1 de cada componente)."
           : `Se compara con el ciclo aprobado anterior (${baseline.size} componentes vigentes).`}
       </p>
+      {draft && !baselineMode && incoming.length > 0 && removedCount * 2 >= baseline.size && (
+        <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          Atención: este archivo no trae {removedCount} de los {baseline.size} componentes del ciclo anterior, y cada uno aparece abajo como «Ya no aparece». ¿Es un archivo parcial? Si es así, vacía las filas e importa el archivo completo antes de decidir.
+        </p>
+      )}
 
       {draft && (
         <section className="mt-6 rounded-md border bg-white p-4">
@@ -181,7 +187,7 @@ export default async function CyclePage({ params }: { params: Promise<{ id: stri
               <p className="mt-1 text-sm text-slate-600">Cambios de peso menores al 10 %, sin alertas. Puedes decidirlos uno por uno abajo o aceptarlos juntos con un motivo compartido. Quedan marcados «en bloque».</p>
               <ActionForm action={bulkDecideAction} submit={`Aceptar ${bulkTargets.length} cambios menores`} variant="outline" className="mt-2 space-y-2">
                 <input type="hidden" name="cycle_id" value={cycle.id} />
-                <ul className="list-disc pl-5 text-sm">{bulkTargets.map((e) => <li key={e.key}>{e.sku} · {e.component}: {e.diffs.map((d) => `${d.field} ${d.from} → ${d.to}`).join(", ")}</li>)}</ul>
+                <ul className="list-disc pl-5 text-sm">{bulkTargets.map((e) => <li key={e.key}>{e.sku || "(sin SKU)"} · {e.component}: {e.diffs.map((d) => `${d.field} ${d.from} → ${d.to}`).join(", ")}</li>)}</ul>
                 <label className="block text-sm">Motivo compartido
                   <input name="reason" required minLength={5} maxLength={300} className="mt-1 w-full rounded-md border border-slate-300 p-2" placeholder="Por ejemplo: revisé las fichas y coinciden" />
                 </label>

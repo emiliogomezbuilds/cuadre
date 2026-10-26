@@ -13,6 +13,14 @@
 - Approval is single-review in v1, and the export says so.
 - The local production build stalls in the sandbox, so Vercel's build is the real build check.
 
+## Mechanical test pass (25 Oct 2026, live URL)
+
+- Worker-column file: refused with a message (pass).
+- Bad-values file: imported and flagged, not dropped; a row without SKU offered only "pedir" or "rechazar" (pass).
+- Approval gate refused with undecided exceptions (pass).
+- Bug found: a 3-row file against a 33-component base produced 33 "Ya no aparece" cards with no warning. Fixed: an amber warning when the file lacks half or more of the base, telling the user to re-import the full file before deciding.
+- Bug found: a blank-SKU card title showed a dangling dot. Fixed: shows "(sin SKU)".
+
 ## Session close
 
 - What changed my mind: (fill after the live tests)
