@@ -146,6 +146,8 @@ check("export: decision log has all 13", log.trim().split("\r\n").length === 14)
 check("export: no forbidden claim anywhere", scanWording(csv + log).length === 0);
 const withReq = evidenceCsv([{ ...comps[0], decision: { choice: "request_supplier", reason: "El proveedor no envió el peso", bulk: false }, openRequest: true }]);
 check("export: a 'pedir el dato' decision and its reason are visible in the evidence row", withReq.includes("pedir dato al proveedor") && withReq.includes("El proveedor no envió el peso") && withReq.includes("pendiente de proveedor"));
+const zero = evidenceCsv([{ ...comps[0], approved: { ...comps[0].approved, recycledPct: 0, evidenceRef: null }, decision: null }]).split("\r\n")[1].split(",");
+check("export: an approved 0 % is written as 0, not left empty", zero[4] === "0");
 check("export: CSV escapes commas and quotes", evidenceCsv([{ ...comps[0], approved: { ...comps[0].approved, component: 'Tapa "grande", azul' } }]).includes('"Tapa ""grande"", azul"'));
 
 // ------------------------------------------------------------ wording scan
