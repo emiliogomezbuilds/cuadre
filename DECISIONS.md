@@ -26,6 +26,7 @@
 - Worst finding: a "pedir el dato al proveedor" (or keep, or reject) decision and its reason did not appear in the component history nor in the evidence CSV row, which showed "aprobada en la base sin excepción". The reason existed only in the separate decision-log file, so the tool's own promise ("every decision keeps its why") looked broken to the user. Fixed: the history page lists those decisions per component, and the evidence row shows the decision and reason taken in the exported cycle. New offline check (93 total).
 - Also fixed: the approve panel now names which exceptions are still undecided; the card explains that "pedir el dato" sends nothing to the supplier.
 - Also fixed (Ximena's last screen): an approved 0 % recycled content was exported as an empty cell, so "0" and "unknown" looked the same. It now exports as 0; it stays empty only when unknown or unsupported (94 checks).
+- Also fixed: the landing, limits and effort texts said "las fuentes que revisé" in the first person and Ximena asked who "yo" was. They now say what was checked: the latest press note found (30 August 2026), with the Diario Oficial not checked.
 - Not fixed on purpose: "revisión por una sola persona" (Condition 1 says it must be stated, and v1 has one reviewer); no document viewer for evidence (out of scope, see PACKET); the demo-data warnings on the landing page (the app is a demo with invented data).
 
 ## Session close

@@ -4,7 +4,7 @@ import type { Reconciliation } from "@/lib/engine";
 
 export const NOT_AVAILABLE = [
   "Volúmenes de venta por SKU (sin ellos no se puede calcular ninguna cuota).",
-  "Las categorías oficiales de envases y el formato oficial de declaración: el reglamento no estaba publicado en las fuentes que revisé.",
+  "Las categorías oficiales de envases y el formato oficial de declaración: el reglamento seguía sin publicarse según la nota de prensa más reciente que encontró quien construyó Cuadre (30 de agosto de 2026; no se revisó el Diario Oficial).",
   "Tarifas o cuotas de cualquier esquema de responsabilidad extendida del productor.",
   "Documentos de evidencia: Cuadre guarda una referencia que el proveedor declara, no el documento ni su autenticidad.",
   "Una segunda persona que revise: en esta versión quien decide también aprueba.",

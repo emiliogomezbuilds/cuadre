@@ -19,7 +19,7 @@ export default function Limites() {
         <li>No afirma que un material se haya reciclado. Una referencia de evidencia es un dato que el proveedor declara; Cuadre no la verifica.</li>
         <li>«Sin sustento» significa que no hay documento de respaldo en el archivo. No significa que el dato sea falso ni es un juicio sobre el proveedor.</li>
         <li>«Posible doble conteo» es una alerta de que la misma referencia aparece en más de un lugar. No está verificado.</li>
-        <li>Las categorías de material son internas de Cuadre. No son las categorías oficiales: el reglamento no estaba publicado en las fuentes que revisé.</li>
+        <li>Las categorías de material son internas de Cuadre. No son las categorías oficiales: el reglamento seguía sin publicarse según la nota de prensa más reciente que encontró quien construyó Cuadre (30 de agosto de 2026; no se revisó el Diario Oficial).</li>
         <li>Cuadre no guarda datos de recolectores ni de otras personas trabajadoras, y rechaza archivos con columnas sobre ellas.</li>
       </ul>
       <h2 className="mt-6 text-lg font-semibold">Revisión</h2>

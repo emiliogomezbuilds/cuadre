@@ -15,7 +15,7 @@ export default function Home() {
         <li>Verás cuánto trabajo manual costó el ciclo y qué datos Cuadre no tiene.</li>
       </ul>
       <div className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-        <strong>Lo que Cuadre no hace.</strong> No calcula cuotas, no presenta declaraciones ante ninguna autoridad y no da asesoría legal: el reglamento de la Ley General de Economía Circular no estaba publicado en las fuentes que revisé. Tampoco verifica que algo se haya reciclado. Una cifra de contenido reciclado sin documento de respaldo se exporta como «sin sustento».
+        <strong>Lo que Cuadre no hace.</strong> No calcula cuotas, no presenta declaraciones ante ninguna autoridad y no da asesoría legal: el reglamento de la Ley General de Economía Circular seguía sin publicarse según la nota de prensa más reciente que encontró quien construyó Cuadre (30 de agosto de 2026; no se revisó el Diario Oficial). Tampoco verifica que algo se haya reciclado. Una cifra de contenido reciclado sin documento de respaldo se exporta como «sin sustento».
       </div>
       <div className="mt-8 flex gap-3">
         <Button asChild size="lg"><Link href="/login">Entrar con Google</Link></Button>
