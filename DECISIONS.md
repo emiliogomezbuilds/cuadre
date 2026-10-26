@@ -21,6 +21,12 @@
 - Bug found: a 3-row file against a 33-component base produced 33 "Ya no aparece" cards with no warning. Fixed: an amber warning when the file lacks half or more of the base, telling the user to re-import the full file before deciding.
 - Bug found: a blank-SKU card title showed a dangling dot. Fixed: shows "(sin SKU)".
 
+## Persona test (25 Oct 2026, Ximena, fresh chat)
+
+- Worst finding: a "pedir el dato al proveedor" (or keep, or reject) decision and its reason did not appear in the component history nor in the evidence CSV row, which showed "aprobada en la base sin excepción". The reason existed only in the separate decision-log file, so the tool's own promise ("every decision keeps its why") looked broken to the user. Fixed: the history page lists those decisions per component, and the evidence row shows the decision and reason taken in the exported cycle. New offline check (93 total).
+- Also fixed: the approve panel now names which exceptions are still undecided; the card explains that "pedir el dato" sends nothing to the supplier.
+- Not fixed on purpose: "revisión por una sola persona" (Condition 1 says it must be stated, and v1 has one reviewer); no document viewer for evidence (out of scope, see PACKET); the demo-data warnings on the landing page (the app is a demo with invented data).
+
 ## Session close
 
 - What changed my mind: (fill after the live tests)

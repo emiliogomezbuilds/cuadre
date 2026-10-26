@@ -144,6 +144,8 @@ check("export: decision and reason travel with the row", /aceptar \(en bloque\),
 const log = decisionLogCsv([...decisions.values()].map((d) => ({ cycleName: "Ciclo 2", key: d.key, choice: d.choice, reason: d.reason, bulk: d.bulk, at: "2026-10-24T10:30:00Z", singleReview: true })));
 check("export: decision log has all 13", log.trim().split("\r\n").length === 14);
 check("export: no forbidden claim anywhere", scanWording(csv + log).length === 0);
+const withReq = evidenceCsv([{ ...comps[0], decision: { choice: "request_supplier", reason: "El proveedor no envió el peso", bulk: false }, openRequest: true }]);
+check("export: a 'pedir el dato' decision and its reason are visible in the evidence row", withReq.includes("pedir dato al proveedor") && withReq.includes("El proveedor no envió el peso") && withReq.includes("pendiente de proveedor"));
 check("export: CSV escapes commas and quotes", evidenceCsv([{ ...comps[0], approved: { ...comps[0].approved, component: 'Tapa "grande", azul' } }]).includes('"Tapa ""grande"", azul"'));
 
 // ------------------------------------------------------------ wording scan

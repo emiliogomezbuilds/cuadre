@@ -8,6 +8,10 @@ import type { Approved, Choice } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+const CHOICE_PLAIN: Record<Choice, string> = {
+  accept_new: "Aceptar el nuevo valor", keep_previous: "Conservar el anterior", request_supplier: "Pedir el dato al proveedor (el valor anterior sigue vigente)", reject_row: "Rechazar la fila",
+};
+
 type V = { key: string; sku: string; component: string; version: number; removed: boolean; snapshot: Approved | null; cycle_id: string; decision_key: string | null };
 
 export default async function Historial() {
@@ -52,6 +56,23 @@ export default async function Historial() {
                     );
                   })}
                 </ol>
+                {(() => {
+                  // Decisions that do not create a version (keep, request, reject) still belong to the component's story.
+                  const extra = (cycles ?? [])
+                    .map((c) => ({ c, d: dec.get(c.id)?.get(k) }))
+                    .filter((x) => x.d && x.d.choice !== "accept_new");
+                  if (extra.length === 0) return null;
+                  return (
+                    <div className="mt-3 border-t pt-2 text-xs text-slate-700">
+                      <div className="font-semibold">Otras decisiones registradas (no cambiaron el valor aprobado)</div>
+                      <ul className="mt-1 space-y-1">
+                        {extra.map(({ c, d }) => (
+                          <li key={c.id}>{cname.get(c.id)}: {CHOICE_PLAIN[d!.choice]}{d!.bulk ? " (en bloque)" : ""}. Motivo: {d!.reason}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })()}
               </section>
             );
           })}

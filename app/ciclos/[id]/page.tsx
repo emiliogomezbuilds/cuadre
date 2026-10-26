@@ -75,6 +75,9 @@ function ExceptionCard({ ex, cycleId, draft, decided }: { ex: Exception; cycleId
           Decisión: <strong>{CHOICE_LABEL(ex, decided.choice as never)}</strong>{decided.bulk ? " (en bloque)" : ""}. Motivo: {decided.reason}
         </p>
       )}
+      {draft && !decided && choices.some((c) => c.value === "request_supplier") && (
+        <p className="mt-3 text-xs text-slate-600">«Pedir el dato al proveedor» no le envía nada al proveedor: deja anotado que falta y conserva el valor anterior hasta que llegue.</p>
+      )}
       {draft && !decided && <DecisionForm cycleId={cycleId} exKey={ex.key} choices={choices} candidates={ex.candidates.map(view)} />}
       {draft && decided && (
         <details className="mt-2 text-sm">
@@ -214,7 +217,7 @@ export default async function CyclePage({ params }: { params: Promise<{ id: stri
             <h2 className="font-semibold">3. Aprobar el ciclo</h2>
             {draft ? (
               pending.length > 0 ? (
-                <p className="mt-2 text-sm text-slate-700">Faltan {pending.length} decisiones. Cuadre no deja aprobar hasta que cada excepción tenga una decisión y un motivo.</p>
+                <p className="mt-2 text-sm text-slate-700">Faltan {pending.length} decisiones. Cuadre no deja aprobar hasta que cada excepción tenga una decisión y un motivo. Te faltan: {pending.map((e) => `${e.sku || "(sin SKU)"} · ${e.component}`).join("; ")}.</p>
               ) : (
                 <ActionForm action={approveAction} submit="Aprobar ciclo" className="mt-2">
                   <input type="hidden" name="cycle_id" value={cycle.id} />

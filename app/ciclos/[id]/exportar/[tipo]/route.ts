@@ -52,7 +52,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     items.push({
       approved: a,
       cycleName: nameOf.get(cid) ?? "",
-      decision: produced && produced.choice === "accept_new" ? { choice: produced.choice, reason: produced.reason, bulk: produced.bulk } : null,
+      // A decision taken in the exported cycle is always shown, whatever the choice (keep, request, reject); otherwise the
+      // accepted decision that produced the current version.
+      decision: inTarget
+        ? { choice: inTarget.choice, reason: inTarget.reason, bulk: inTarget.bulk }
+        : produced && produced.choice === "accept_new" ? { choice: produced.choice, reason: produced.reason, bulk: produced.bulk } : null,
       openRequest: inTarget?.choice === "request_supplier",
       singleReview: single.get(cid) ?? true,
     });
