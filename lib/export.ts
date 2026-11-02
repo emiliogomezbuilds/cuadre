@@ -31,7 +31,16 @@ export function recycledClaim(a: Approved): string {
   return a.evidenceRef ? DECLARED : NO_SUPPORT;
 }
 
+// Persona test, 1 Nov 2026 (PERSONA_EmilioGomez): a sku like "GEL-250", opened in a spreadsheet app, was silently
+// reformatted (its own auto data-detection turned the text into a number-like value) — the exact kind of silent
+// change Cuadre promises never to make. sku and componente are identifiers, not numbers or dates, so Id(...) marks
+// them to be written as an Excel/Numbers text-locked literal (="...") instead of a bare string, which both
+// applications read back as the original text rather than guessing a type for it.
+class Id { constructor(public raw: string) {} }
+const Id_ = (v: unknown) => new Id(v === null || v === undefined ? "" : String(v));
+
 const q = (v: unknown) => {
+  if (v instanceof Id) return `"=""${v.raw.replace(/"/g, '""')}"""`;
   const s = v === null || v === undefined ? "" : String(v);
   return /[",\n\r;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
@@ -52,8 +61,10 @@ export function evidenceCsv(items: ExportComponent[]): string {
     const supported = (a.recycledPct ?? 0) > 0 && !!a.evidenceRef;
     lines.push(
       row([
-        // An approved 0 % stays "0" (a stated value); the cell is empty only when the value is unknown or unsupported.
-        a.sku, a.component, a.material, a.weightG, supported || a.recycledPct === 0 ? a.recycledPct : "", recycledClaim(a), a.evidenceRef ?? "", a.supplier,
+        // sku and componente are identifiers: text-locked (Id_) so a spreadsheet app's own auto-formatting can't
+        // silently change them. An approved 0 % stays "0" (a stated value); the cell is empty only when unknown or
+        // unsupported.
+        Id_(a.sku), Id_(a.component), a.material, a.weightG, supported || a.recycledPct === 0 ? a.recycledPct : "", recycledClaim(a), a.evidenceRef ?? "", a.supplier,
         evidenceStatus(a), a.version, it.cycleName, `${a.sourceFile}:${a.sourceLine}`,
         it.decision ? DECISION_ES[it.decision.choice] + (it.decision.bulk ? " (en bloque)" : "") : it.approved.version === 1 ? "aprobada en la base sin excepción" : "coincidió sin intervención",
         it.decision?.reason ?? "", it.openRequest ? "pendiente de proveedor (se conserva el valor anterior)" : "vigente",

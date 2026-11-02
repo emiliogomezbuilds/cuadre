@@ -135,7 +135,7 @@ const comps: ExportComponent[] = plan.versions.filter((p) => p.values).map((p) =
 const csv = evidenceCsv(comps);
 check("export: BOM and header", csv.startsWith("﻿sku,componente"));
 const tapa = comps.find((c) => c.approved.sku === "DET-1L" && c.approved.component === "Tapa")!;
-check("export: unsupported recycled claim is labeled and its value is empty", recycledClaim(tapa.approved) === "sin sustento" && csv.split("\r\n").find((l) => l.startsWith("DET-1L,Tapa"))!.includes(",,sin sustento,"));
+check("export: unsupported recycled claim is labeled and its value is empty", recycledClaim(tapa.approved) === "sin sustento" && csv.split("\r\n").find((l) => l.startsWith('"=""DET-1L""","=""Tapa"""'))!.includes(",,sin sustento,"));
 const garrafa: Approved = { ...base.find((r) => r.sku === "DET-3L" && r.component === "Garrafa")!, version: 1 } as unknown as Approved;
 check("export: a reference is shown as declared, not verified", /no verificada por Cuadre/.test(recycledClaim(toApproved(base.find((r) => r.sku === "DET-3L" && r.component === "Garrafa")!))) && garrafa !== undefined);
 check("export: simulated rows say SIMULADO", /SIMULADO/.test(evidenceStatus(toApproved(base[0]))));
@@ -153,6 +153,14 @@ check("export: CSV escapes commas and quotes", evidenceCsv([{ ...comps[0], appro
 
 // ------------------------------------------------------------ week 12: status travels with the value
 check("export: header ends with valor_con_estado", EVIDENCE_HEADER[EVIDENCE_HEADER.length - 1] === "valor_con_estado");
+// ------------------------------------------------------------ week 12: persona test (Karla) finding
+{
+  const idComp = { ...comps[0], approved: { ...comps[0].approved, sku: "GEL-250", component: "Frasco" } };
+  const line = evidenceCsv([idComp]).split("\r\n")[1];
+  check("export: an identifier-like sku is text-locked so a spreadsheet app can't silently reformat it", line.startsWith('"=""GEL-250"""'));
+  const quoteSku = { ...comps[0], approved: { ...comps[0].approved, sku: 'A"B', component: "Frasco" } };
+  check("export: a quote inside a text-locked sku is still escaped correctly", evidenceCsv([quoteSku]).split("\r\n")[1].startsWith('"=""A""B"""'));
+}
 check("statusline: weight carries its source status in the same string, not a separate field", weightWithStatus(24, "declaracion_proveedor").includes("24 g") && weightWithStatus(24, "declaracion_proveedor").includes("no verificado"));
 check("statusline: an unsupported recycled value says so in the same string", recycledWithStatus(30, null).includes("30 %") && recycledWithStatus(30, null).includes("sin sustento"));
 check("statusline: a supported recycled value is never worded as verified", scanWording(recycledWithStatus(30, "ficha-123")).length === 0);
