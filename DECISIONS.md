@@ -29,7 +29,18 @@
 - Also fixed: the landing, limits and effort texts said "las fuentes que revisé" in the first person and Ximena asked who "yo" was. They now say what was checked: the latest press note found (30 August 2026), with the Diario Oficial not checked.
 - Not fixed on purpose: "revisión por una sola persona" (Condition 1 says it must be stated, and v1 has one reviewer); no document viewer for evidence (out of scope, see PACKET); the demo-data warnings on the landing page (the app is a demo with invented data).
 
-## Session close
+## Session close (Week 11)
 
 - What changed my mind: (fill after the live tests)
 - Tomorrow's first move: deploy, then run the live walkthrough with the simulated feed.
+
+## Week 12 session (1 November 2026): the core-only rebuild
+
+- Venture chosen: Cuadre, under Team 7's uncontested-claim rule for Week 9 (Josep), with Emilio's Week 9 grade not yet posted, Josep's posted — see `docs/VERDICT.md` equivalent, `VERDICT_EmilioGomez.pdf`.
+- Packet, charter (`docs/CHARTER.md`) and personas (`docs/PERSONAS.md`) written and committed before any code this week.
+- Scope cut: the AI proposal screens, the label-photo reader and the simulated supplier feed are hidden behind `lib/flags.ts` (`CORE_ONLY = true`). The code and its tests stay in the repo.
+- New this week: status travels with the value, on screen (`lib/statusline.ts`) and in the export (`valor_con_estado` column, `lib/export.ts`). 99 offline checks (was 94).
+- Real domain connected: `cuadre.dev`, via the GitHub Student Developer Pack (Name.com, free first year). Supabase Site URL and redirect URLs updated.
+- Venture site skeleton: `/product` and `/about`, stating the need, payer and 10:1 case as open, matching `VERDICT_EmilioGomez.pdf` exactly rather than a cleaner marketing version.
+- What changed my mind (fill after the live tests and the persona test).
+- Tomorrow's first move: push, confirm the Vercel deploy on `cuadre.dev`, run the mechanical pass, then the persona test.
