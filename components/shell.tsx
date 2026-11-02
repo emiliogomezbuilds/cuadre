@@ -7,6 +7,8 @@ export function Shell({ children, email, wide }: { children: React.ReactNode; em
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link href={email ? "/dashboard" : "/"} className="text-lg font-semibold">Cuadre</Link>
           <nav className="flex items-center gap-4 text-sm">
+            <Link href="/product" className="text-slate-300 hover:underline">Producto</Link>
+            <Link href="/about" className="text-slate-300 hover:underline">Quién paga</Link>
             <Link href="/limites" className="text-slate-300 hover:underline">Límites</Link>
             <Link href="/privacidad" className="text-slate-300 hover:underline">Privacidad</Link>
             {email ? (
