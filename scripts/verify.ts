@@ -4,7 +4,8 @@ import path from "node:path";
 import { parseCsv, MAX_ROWS } from "../lib/parse";
 import { reconcile, keyOf, type Exception } from "../lib/engine";
 import { allowedChoices, bulkEligible, validateDecision, planApproval, pendingExceptions, type Decision } from "../lib/decisions";
-import { evidenceCsv, decisionLogCsv, evidenceStatus, recycledClaim, type ExportComponent } from "../lib/export";
+import { evidenceCsv, decisionLogCsv, evidenceStatus, recycledClaim, EVIDENCE_HEADER, type ExportComponent } from "../lib/export";
+import { weightWithStatus, recycledWithStatus } from "../lib/statusline";
 import { effort } from "../lib/effort";
 import { scanWording } from "../lib/wording";
 import { simBaselineRows, simUpdateRows, simBaselineCsv } from "../lib/simfeed";
@@ -149,6 +150,13 @@ check("export: a 'pedir el dato' decision and its reason are visible in the evid
 const zero = evidenceCsv([{ ...comps[0], approved: { ...comps[0].approved, recycledPct: 0, evidenceRef: null }, decision: null }]).split("\r\n")[1].split(",");
 check("export: an approved 0 % is written as 0, not left empty", zero[4] === "0");
 check("export: CSV escapes commas and quotes", evidenceCsv([{ ...comps[0], approved: { ...comps[0].approved, component: 'Tapa "grande", azul' } }]).includes('"Tapa ""grande"", azul"'));
+
+// ------------------------------------------------------------ week 12: status travels with the value
+check("export: header ends with valor_con_estado", EVIDENCE_HEADER[EVIDENCE_HEADER.length - 1] === "valor_con_estado");
+check("statusline: weight carries its source status in the same string, not a separate field", weightWithStatus(24, "declaracion_proveedor").includes("24 g") && weightWithStatus(24, "declaracion_proveedor").includes("no verificado"));
+check("statusline: an unsupported recycled value says so in the same string", recycledWithStatus(30, null).includes("30 %") && recycledWithStatus(30, null).includes("sin sustento"));
+check("statusline: a supported recycled value is never worded as verified", scanWording(recycledWithStatus(30, "ficha-123")).length === 0);
+check("statusline: a null value renders as empty, not as a false status", weightWithStatus(null, "declaracion_proveedor") === "(vacío)");
 
 // ------------------------------------------------------------ wording scan
 check("wording: catches the claims it must catch", scanWording("Reciclado verificado").length === 1 && scanWording("impacto ambiental positivo").length === 1 && scanWording("beneficia a los recolectores").length === 1 && scanWording("calificación del proveedor").length === 1);

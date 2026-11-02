@@ -7,13 +7,15 @@ import { effort } from "@/lib/effort";
 import { NOT_AVAILABLE } from "@/lib/effort";
 import { CHOICE_LABEL, allowedChoices, bulkEligible, pendingExceptions } from "@/lib/decisions";
 import type { Exception } from "@/lib/engine";
-import { ORIGIN_LABEL, SOURCE_KIND_LABEL, type InRow } from "@/lib/types";
+import { ORIGIN_LABEL, type InRow } from "@/lib/types";
 import { Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import { ActionForm } from "@/components/action-form";
 import { DecisionForm, type CandidateView } from "@/components/decision-form";
 import { AiPhotoPanel, AiTextPanel } from "@/components/ai-panels";
 import { approveAction, bulkDecideAction, clearRowsAction, importCsvAction, simFeedAction } from "@/app/actions";
+import { CORE_ONLY } from "@/lib/flags";
+import { recycledWithStatus, weightWithStatus } from "@/lib/statusline";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +26,9 @@ const FLAG_LABEL: Record<string, string> = {
 const KIND_LABEL: Record<string, string> = { changed: "Cambió", new: "Nuevo", removed: "Ya no aparece", conflict: "Filas repetidas distintas", flag_only: "Con alerta" };
 
 const view = (r: InRow): CandidateView => ({
-  sku: r.sku, component: r.component, material: r.material || "(vacío)", weight: r.weightG === null ? "(vacío)" : String(r.weightG),
-  recycled: r.recycledPct === null ? "(vacío)" : String(r.recycledPct), supplier: r.supplier || "(vacío)",
+  sku: r.sku, component: r.component, material: r.material || "(vacío)",
+  weight: weightWithStatus(r.weightG, r.sourceKind),
+  recycled: recycledWithStatus(r.recycledPct, r.evidenceRef), supplier: r.supplier || "(vacío)",
   evidence: r.evidenceRef ?? "(sin referencia)", source: `${r.sourceFile}, línea ${r.sourceLine}`, origin: ORIGIN_LABEL[r.origin],
 });
 
@@ -34,9 +37,9 @@ function Candidate({ r, n }: { r: InRow; n?: number }) {
   return (
     <div className="rounded border bg-slate-50 p-2 text-xs">
       {n !== undefined && <div className="font-semibold">Fila {n}</div>}
-      <div>{v.material} · {v.weight} g · reciclado {v.recycled} % · {v.supplier} · evidencia: {v.evidence}</div>
+      <div>{v.material} · peso: {v.weight} · reciclado: {v.recycled} · {v.supplier}</div>
       <div className="text-slate-600">
-        Fuente: {v.source} · {v.origin}{r.sourceKind ? ` · ${SOURCE_KIND_LABEL[r.sourceKind]}` : ""}
+        Fuente: {v.source} · {v.origin}
       </div>
       {r.quote && <div className="text-slate-600">Cita de la IA: «{r.quote}»</div>}
     </div>
@@ -65,7 +68,10 @@ function ExceptionCard({ ex, cycleId, draft, decided }: { ex: Exception; cycleId
         {ex.previous && (
           <div className="rounded border bg-slate-50 p-2 text-xs">
             <div className="font-semibold">Valor aprobado (versión {ex.previous.version})</div>
-            <div>{ex.previous.material} · {ex.previous.weightG ?? "(vacío)"} g · reciclado {ex.previous.recycledPct ?? "(vacío)"} % · {ex.previous.supplier}</div>
+            <div>
+              {ex.previous.material} · peso: {weightWithStatus(ex.previous.weightG, ex.previous.sourceKind)} ·
+              reciclado: {recycledWithStatus(ex.previous.recycledPct, ex.previous.evidenceRef)} · {ex.previous.supplier}
+            </div>
           </div>
         )}
         {ex.candidates.map((r, i) => <Candidate key={i} r={r} n={ex.candidates.length > 1 ? i + 1 : undefined} />)}
@@ -139,24 +145,31 @@ export default async function CyclePage({ params }: { params: Promise<{ id: stri
               <textarea name="csv_text" rows={3} className="mt-1 w-full rounded-md border border-slate-300 p-2 font-mono text-xs" />
             </label>
           </ActionForm>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded border border-amber-300 bg-amber-50 p-3">
-              <p className="text-sm font-semibold text-amber-900">Alimentación SIMULADA de proveedores (inventada)</p>
-              <p className="text-xs text-amber-900">Empresa y proveedores ficticios. Cada fila queda marcada SIMULADO en pantalla y en la exportación.</p>
-              <div className="flex flex-wrap gap-2">
-                <ActionForm action={simFeedAction} submit="Cargar base simulada (ciclo 1)" variant="outline">
-                  <input type="hidden" name="cycle_id" value={cycle.id} /><input type="hidden" name="which" value="baseline" />
-                </ActionForm>
-                <ActionForm action={simFeedAction} submit="Recibir actualización simulada (ciclo 2)" variant="outline">
-                  <input type="hidden" name="cycle_id" value={cycle.id} /><input type="hidden" name="which" value="update" />
-                </ActionForm>
+          {!CORE_ONLY && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded border border-amber-300 bg-amber-50 p-3">
+                <p className="text-sm font-semibold text-amber-900">Alimentación SIMULADA de proveedores (inventada)</p>
+                <p className="text-xs text-amber-900">Empresa y proveedores ficticios. Cada fila queda marcada SIMULADO en pantalla y en la exportación.</p>
+                <div className="flex flex-wrap gap-2">
+                  <ActionForm action={simFeedAction} submit="Cargar base simulada (ciclo 1)" variant="outline">
+                    <input type="hidden" name="cycle_id" value={cycle.id} /><input type="hidden" name="which" value="baseline" />
+                  </ActionForm>
+                  <ActionForm action={simFeedAction} submit="Recibir actualización simulada (ciclo 2)" variant="outline">
+                    <input type="hidden" name="cycle_id" value={cycle.id} /><input type="hidden" name="which" value="update" />
+                  </ActionForm>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <details className="rounded border bg-slate-50 p-3"><summary className="cursor-pointer text-sm font-semibold">Ayuda con IA: texto del proveedor (opcional)</summary><div className="mt-2"><AiTextPanel cycleId={cycle.id} /></div></details>
+                <details className="rounded border bg-slate-50 p-3"><summary className="cursor-pointer text-sm font-semibold">Ayuda con IA: foto de una etiqueta (opcional)</summary><div className="mt-2"><AiPhotoPanel cycleId={cycle.id} /></div></details>
               </div>
             </div>
-            <div className="space-y-2">
-              <details className="rounded border bg-slate-50 p-3"><summary className="cursor-pointer text-sm font-semibold">Ayuda con IA: texto del proveedor (opcional)</summary><div className="mt-2"><AiTextPanel cycleId={cycle.id} /></div></details>
-              <details className="rounded border bg-slate-50 p-3"><summary className="cursor-pointer text-sm font-semibold">Ayuda con IA: foto de una etiqueta (opcional)</summary><div className="mt-2"><AiPhotoPanel cycleId={cycle.id} /></div></details>
-            </div>
-          </div>
+          )}
+          {CORE_ONLY && (
+            <p className="mt-4 rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+              La alimentación simulada y las ayudas con IA quedan fuera del núcleo de esta semana (ver «Lo que no construyo esta semana» en el packet). El código sigue en el repositorio y sus pruebas siguen pasando; solo no son alcanzables desde aquí.
+            </p>
+          )}
           {incoming.length > 0 && (
             <form action={clearRowsAction} className="mt-3">
               <input type="hidden" name="cycle_id" value={cycle.id} />

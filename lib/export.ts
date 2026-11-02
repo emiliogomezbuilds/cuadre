@@ -3,6 +3,7 @@
 // verified by Cuadre. A wording scan (scripts/verify.ts) fails the build if any verified-recycling claim appears.
 import type { Approved, Choice } from "@/lib/types";
 import { SOURCE_KIND_LABEL } from "@/lib/types";
+import { weightWithStatus, recycledWithStatus } from "@/lib/statusline";
 
 export interface ExportComponent {
   approved: Approved;
@@ -36,7 +37,9 @@ const q = (v: unknown) => {
 };
 const row = (cells: unknown[]) => cells.map(q).join(",");
 
-export const EVIDENCE_HEADER = ["sku", "componente", "material", "peso_g", "reciclado_pct", "afirmacion_reciclado", "referencia_evidencia", "proveedor", "estado_evidencia", "version", "ciclo", "fuente", "decision", "motivo", "estado", "revision"];
+// valor_con_estado (Week 12, CHARTER.md Principle 4): the weight and the recycled-content figure repeated
+// with their status attached in the same cell, so a copy of just this column keeps the status with the value.
+export const EVIDENCE_HEADER = ["sku", "componente", "material", "peso_g", "reciclado_pct", "afirmacion_reciclado", "referencia_evidencia", "proveedor", "estado_evidencia", "version", "ciclo", "fuente", "decision", "motivo", "estado", "revision", "valor_con_estado"];
 
 const DECISION_ES: Record<Choice, string> = {
   accept_new: "aceptar", keep_previous: "conservar el anterior", request_supplier: "pedir dato al proveedor", reject_row: "rechazar fila",
@@ -55,6 +58,7 @@ export function evidenceCsv(items: ExportComponent[]): string {
         it.decision ? DECISION_ES[it.decision.choice] + (it.decision.bulk ? " (en bloque)" : "") : it.approved.version === 1 ? "aprobada en la base sin excepción" : "coincidió sin intervención",
         it.decision?.reason ?? "", it.openRequest ? "pendiente de proveedor (se conserva el valor anterior)" : "vigente",
         it.singleReview ? "revisión por una sola persona" : "revisión por dos personas",
+        `peso: ${weightWithStatus(a.weightG, a.sourceKind)}; reciclado: ${recycledWithStatus(a.recycledPct, a.evidenceRef)}`,
       ]),
     );
   }
