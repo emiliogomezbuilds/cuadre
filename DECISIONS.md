@@ -42,5 +42,10 @@
 - New this week: status travels with the value, on screen (`lib/statusline.ts`) and in the export (`valor_con_estado` column, `lib/export.ts`). 99 offline checks (was 94).
 - Real domain connected: `cuadre.dev`, via the GitHub Student Developer Pack (Name.com, free first year). Supabase Site URL and redirect URLs updated.
 - Venture site skeleton: `/product` and `/about`, stating the need, payer and 10:1 case as open, matching `VERDICT_EmilioGomez.pdf` exactly rather than a cleaner marketing version.
-- What changed my mind (fill after the live tests and the persona test).
-- Tomorrow's first move: push, confirm the Vercel deploy on `cuadre.dev`, run the mechanical pass, then the persona test.
+## Mechanical test pass (1 November 2026, live URL)
+
+- Checked the public pages (`/`, `/product`, `/about`, `/limites`, `/privacidad`) directly on `cuadre.dev`: all load, the nav shows Producto and Quién paga, and `/about` states the open gates in the same words as `VERDICT_EmilioGomez.pdf`, not a cleaner version.
+- Bug found: `CORE_ONLY` only hid the AI and simulated-feed panels from the screen (`app/ciclos/[id]/page.tsx`). The five server actions behind them (`simFeedAction`, `aiTextProposeAction`, `aiTextConfirmAction`, `aiPhotoProposeAction`, `aiPhotoConfirmAction`) had no guard of their own, so a direct call would still have run them — the packet's own promise, "nothing beyond the core is reachable," was not actually true at the server. Fixed: each of those five actions now checks `CORE_ONLY` and returns a plain scope message before touching the database, auth or the AI call. 99 offline checks still pass; `tsc --noEmit` clean.
+
+- What changed my mind (fill after the persona test).
+- Tomorrow's first move: push this fix, confirm the second Vercel deploy on `cuadre.dev`, then run the persona test.

@@ -11,6 +11,12 @@ import { CHOICES, MATERIALS, type Choice, type InRow, type Origin } from "@/lib/
 import { SIM_BASELINE_FILE, SIM_UPDATE_FILE, simBaselineCsv, simUpdateCsv } from "@/lib/simfeed";
 import { AI_DAILY_LIMIT, AI_IMAGE_MAX_BYTES, AI_TEXT_MAX, IMAGE_TYPES, draftFromPhoto, rowsFromText } from "@/lib/ai";
 import { checkAiRows, type AiRow } from "@/lib/ai-parse";
+import { CORE_ONLY } from "@/lib/flags";
+
+// Week 12 scope cut, enforced server-side, not only hidden in the UI. A bug found in this week's own
+// mechanical pass: the AI and simulated-feed actions were hidden from the screen but still callable
+// directly. Every one of those actions now refuses before doing any work.
+const CORE_ONLY_ERROR: ActionState = { error: "Esta función queda fuera del núcleo de esta semana (ver docs/PACKET.md, sección 10)." };
 
 type Ctx = Awaited<ReturnType<typeof requireUser>>;
 export type ActionState = { error?: string; ok?: string };
@@ -93,6 +99,7 @@ export async function importCsvAction(_p: ActionState, fd: FormData): Promise<Ac
 }
 
 export async function simFeedAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  if (CORE_ONLY) return CORE_ONLY_ERROR;
   const ctx = await requireUser();
   const c = await draftCycle(ctx, fd);
   if ("error" in c) return { error: c.error };
@@ -194,6 +201,7 @@ export async function approveAction(_p: ActionState, fd: FormData): Promise<Acti
 export type AiTextState = { error?: string; rows?: AiRow[]; dropped?: Array<{ sku: string; component: string; reason: string }>; text?: string };
 
 export async function aiTextProposeAction(_p: AiTextState, fd: FormData): Promise<AiTextState> {
+  if (CORE_ONLY) return CORE_ONLY_ERROR;
   const ctx = await requireUser();
   const c = await draftCycle(ctx, fd);
   if ("error" in c) return { error: c.error };
@@ -208,6 +216,7 @@ export async function aiTextProposeAction(_p: AiTextState, fd: FormData): Promis
 }
 
 export async function aiTextConfirmAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  if (CORE_ONLY) return CORE_ONLY_ERROR;
   const ctx = await requireUser();
   const c = await draftCycle(ctx, fd);
   if ("error" in c) return { error: c.error };
@@ -244,6 +253,7 @@ export async function aiTextConfirmAction(_p: ActionState, fd: FormData): Promis
 export type AiPhotoState = { error?: string; draft?: { material: string | null; weightG: number | null; quote: string } };
 
 export async function aiPhotoProposeAction(_p: AiPhotoState, fd: FormData): Promise<AiPhotoState> {
+  if (CORE_ONLY) return CORE_ONLY_ERROR;
   const ctx = await requireUser();
   const c = await draftCycle(ctx, fd);
   if ("error" in c) return { error: c.error };
@@ -260,6 +270,7 @@ export async function aiPhotoProposeAction(_p: AiPhotoState, fd: FormData): Prom
 }
 
 export async function aiPhotoConfirmAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  if (CORE_ONLY) return CORE_ONLY_ERROR;
   const ctx = await requireUser();
   const c = await draftCycle(ctx, fd);
   if ("error" in c) return { error: c.error };
