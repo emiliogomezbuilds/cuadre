@@ -254,6 +254,7 @@ export async function aiTextConfirmAction(_p: ActionState, fd: FormData): Promis
   if (out.length === 0) return { error: "No confirmaste ninguna fila." };
   const ins = await insertRows(ctx, c.id, out);
   if (ins.error) return { error: ins.error };
+  await logEvent(ctx.supabase, ctx.user.id, "file_imported", c.id, `${out.length} filas desde texto con IA`);
   revalidatePath(`/ciclos/${c.id}`);
   return { ok: `Se agregaron ${out.length} filas que confirmaste una por una.` };
 }
