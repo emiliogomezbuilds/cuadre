@@ -102,10 +102,15 @@ Unchanged in substance from `CHARTER.md`, sharpened by this week's finding: the 
 
 **Mechanical pass.** Reuse the Week 12 offline checks (101 checks); add checks for the event log and for the split flags (paste-text reachable, photo and simulated feed still refused server-side). Test the schema parser against real phone-extracted text samples, not only clean invented data.
 
-**Real-human pass (Layer 2, already run before this code).** Five real strangers, three-plus required, five industries covered, all four precommitted roles represented. Findings and ranking in `PERSONA_EmilioGomez.pdf` (this week's real-user-test log) and `DECISIONS.md`. The #1 pain (double-entry) is what this packet's build targets; before/after evidence is required once redeployed.
+**Real-human pass (Layer 2, already run before this code).** Five real strangers, three-plus required, five industries covered, all four precommitted roles represented. Findings and ranking in `PERSONA_EmilioGomez.pdf` (this week's real-user-test log) and `DECISIONS.md`. The #1 pain (double-entry) is what this packet's build targets.
+
+**Before/after, live on cuadre.dev (8 November 2026).** Before: the paste-text screen was unreachable (`CORE_ONLY = true`; the server refused the action directly, not only hidden in the UI). After: pasted real phone-OCR-shaped text with a mid-record line break ("TAMBO 200L PEAD / cod. TAM-200 / Tapa rosca PP, 40 g / Peso neto por unidad: 820 g / Proveedor: Químicos del Bajío") — two rows proposed correctly, one quoting text that spans the line break; confirmed both, and they entered the same exception engine as a typed CSV. First pass found a real gap of my own: the new event log recorded `cycle_created` but not the AI-confirmed-rows path — fixed immediately (commit `2f429d9`), redeployed, and reconfirmed with a second paste-and-confirm (filas importadas: 2 → 3).
 
 ### Evidence that the packet came before the code
 
 | Commit | Time | What |
 |---|---|---|
 | `120d8cd` | 8 Nov 2026, 20:47 | This packet, `PACKET_W12.md` archive, `mockup_w13.png` — committed before any Week 13 code change |
+| `78f841d` | 8 Nov 2026 | Recorded this commit hash as the evidence table's own entry |
+| `be206dc` | 8 Nov 2026 | Split `CORE_ONLY` into three flags; re-enabled paste-text with phone-OCR copy; added the event log; 9 new offline checks (101 → 110) |
+| `2f429d9` | 8 Nov 2026 | Fix found live on cuadre.dev: logged `file_imported` for AI-confirmed rows too, not only CSV imports |
