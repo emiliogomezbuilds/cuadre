@@ -108,4 +108,4 @@ Unchanged in substance from `CHARTER.md`, sharpened by this week's finding: the 
 
 | Commit | Time | What |
 |---|---|---|
-| (filled at close) | | This packet |
+| `120d8cd` | 8 Nov 2026, 20:47 | This packet, `PACKET_W12.md` archive, `mockup_w13.png` — committed before any Week 13 code change |
