@@ -45,3 +45,14 @@ above is sufficient; I do not filter further based on an impression of who will 
 
 Any such change, if it becomes necessary, gets logged here with a reason and a date, the same way Cuadre
 logs a decision and a reason for every exception. It does not get made silently.
+
+## Logged deviations
+
+- **8 Nov 2026, session #2, Ana Sofía Lebrija Morales.** Found through one mutual friend; Emilio does not
+  personally know her beyond that one connection, so she counts as a stranger (same shape as session #1,
+  found through a board contact's introduction), not one of the two allowed acquaintance slots. Role
+  deviation, logged honestly: she is a becaria de calidad (intern), not the decision-making role the
+  target list names. Kept rather than dropped because she is still inside the calidad function at a
+  70-employee contract manufacturer (Laboratorios Cosméticos Satélite) — closer to the core profile than
+  the purchasing/logistics fallback — and a junior user's confusion is its own useful data, not a
+  substitute for Mariana's expert-level session.
