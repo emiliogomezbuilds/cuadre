@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/session";
 import { uuid } from "@/lib/validate";
 import { baselineFrom, latestDecisions, type DbDecision } from "@/lib/data";
 import { decisionLogCsv, evidenceCsv, type ExportComponent } from "@/lib/export";
+import { logEvent } from "@/lib/events";
 import type { Approved } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 type V = { key: string; sku: string; component: string; version: number; removed: boolean; snapshot: Approved | null; cycle_id: string; decision_key: string | null; created_at: string };
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string; tipo: string }> }) {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const { id, tipo } = await params;
   if (!uuid(id) || (tipo !== "evidencia" && tipo !== "decisiones")) return new NextResponse("No encontrado", { status: 404 });
   const { data: cycles } = await supabase.from("cycles").select("id,number,name,status,approved_single_review").order("number", { ascending: true });
@@ -27,6 +28,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const items = ((decs ?? []) as DbDecision[]).filter((d) => ids.has(d.cycle_id)).map((d) => ({
       cycleName: nameOf.get(d.cycle_id) ?? "", key: d.key, choice: d.choice, reason: d.reason, bulk: d.bulk, at: d.created_at, singleReview: single.get(d.cycle_id) ?? true,
     }));
+    await logEvent(supabase, user.id, "export_downloaded", target.id, `decisiones ciclo ${target.number}`);
     return new NextResponse(decisionLogCsv(items), { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="cuadre_decisiones_ciclo${target.number}.csv"` } });
   }
 
@@ -62,5 +64,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     });
   }
   items.sort((x, y) => (x.approved.sku + x.approved.component < y.approved.sku + y.approved.component ? -1 : 1));
+  await logEvent(supabase, user.id, "export_downloaded", target.id, `evidencia ciclo ${target.number}`);
   return new NextResponse(evidenceCsv(items), { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="cuadre_evidencia_ciclo${target.number}.csv"` } });
 }

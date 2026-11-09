@@ -11,12 +11,15 @@ import { CHOICES, MATERIALS, type Choice, type InRow, type Origin } from "@/lib/
 import { SIM_BASELINE_FILE, SIM_UPDATE_FILE, simBaselineCsv, simUpdateCsv } from "@/lib/simfeed";
 import { AI_DAILY_LIMIT, AI_IMAGE_MAX_BYTES, AI_TEXT_MAX, IMAGE_TYPES, draftFromPhoto, rowsFromText } from "@/lib/ai";
 import { checkAiRows, type AiRow } from "@/lib/ai-parse";
-import { CORE_ONLY } from "@/lib/flags";
+import { AI_TEXT_ENABLED, AI_PHOTO_ENABLED, SIM_FEED_ENABLED } from "@/lib/flags";
+import { logEvent } from "@/lib/events";
 
-// Week 12 scope cut, enforced server-side, not only hidden in the UI. A bug found in this week's own
-// mechanical pass: the AI and simulated-feed actions were hidden from the screen but still callable
-// directly. Every one of those actions now refuses before doing any work.
-const CORE_ONLY_ERROR: ActionState = { error: "Esta función queda fuera del núcleo de esta semana (ver docs/PACKET.md, sección 10)." };
+// Scope cut, enforced server-side, not only hidden in the UI. A bug found in Week 12's own mechanical
+// pass: the AI and simulated-feed actions were hidden from the screen but still callable directly. Every
+// one of those actions refuses before doing any work when its own flag is off. Week 13 split the single
+// CORE_ONLY flag into three independent ones (docs/PACKET.md, section 4) so paste-text could come back
+// without also re-exposing the photo reader or the simulated feed.
+const FEATURE_OFF_ERROR: ActionState = { error: "Esta función sigue apagada esta semana (ver docs/PACKET.md, sección 4 o 10)." };
 
 type Ctx = Awaited<ReturnType<typeof requireUser>>;
 export type ActionState = { error?: string; ok?: string };
@@ -70,6 +73,7 @@ export async function createCycleAction(_p: ActionState, fd: FormData): Promise<
   if (number > 99) return { error: "Llegaste al máximo de ciclos de la demostración." };
   const { data, error } = await ctx.supabase.from("cycles").insert({ name, number }).select("id").single();
   if (error || !data) return { error: "No se pudo crear el ciclo. Intenta de nuevo." };
+  await logEvent(ctx.supabase, ctx.user.id, "cycle_created", data.id, name);
   revalidatePath("/dashboard");
   redirect(`/ciclos/${data.id}`);
 }
@@ -94,12 +98,13 @@ export async function importCsvAction(_p: ActionState, fd: FormData): Promise<Ac
   if (!parsed.ok) return { error: parsed.error };
   const ins = await insertRows(ctx, c.id, parsed.rows);
   if (ins.error) return { error: ins.error };
+  await logEvent(ctx.supabase, ctx.user.id, "file_imported", c.id, `${parsed.rows.length} filas de ${fileName}`);
   revalidatePath(`/ciclos/${c.id}`);
   return { ok: `Se importaron ${parsed.rows.length} filas de ${fileName}.` };
 }
 
 export async function simFeedAction(_p: ActionState, fd: FormData): Promise<ActionState> {
-  if (CORE_ONLY) return CORE_ONLY_ERROR;
+  if (!SIM_FEED_ENABLED) return FEATURE_OFF_ERROR;
   const ctx = await requireUser();
   const c = await draftCycle(ctx, fd);
   if ("error" in c) return { error: c.error };
@@ -148,6 +153,7 @@ export async function decideAction(_p: ActionState, fd: FormData): Promise<Actio
   if (err) return { error: err };
   const { error } = await ctx.supabase.from("decisions").insert({ cycle_id: c.id, key, choice: r.d.choice, reason: r.d.reason.trim(), pick: r.d.pick, bulk: false });
   if (error) return { error: "No se pudo guardar la decisión. Intenta de nuevo." };
+  await logEvent(ctx.supabase, ctx.user.id, "exception_decided", c.id, `${key}: ${r.d.choice}`);
   revalidatePath(`/ciclos/${c.id}`);
   return { ok: "Decisión guardada." };
 }
@@ -164,6 +170,7 @@ export async function bulkDecideAction(_p: ActionState, fd: FormData): Promise<A
   const payload = targets.map((e) => ({ cycle_id: c.id, key: e.key, choice: "accept_new" as Choice, reason, pick: null, bulk: true }));
   const { error } = await ctx.supabase.from("decisions").insert(payload);
   if (error) return { error: "No se pudieron guardar las decisiones. Intenta de nuevo." };
+  await logEvent(ctx.supabase, ctx.user.id, "exception_decided", c.id, `${targets.length} en bloque`);
   revalidatePath(`/ciclos/${c.id}`);
   return { ok: `Se aceptaron ${targets.length} cambios menores en bloque, con tu motivo.` };
 }
@@ -192,6 +199,7 @@ export async function approveAction(_p: ActionState, fd: FormData): Promise<Acti
   }
   const { error } = await ctx.supabase.from("cycles").update({ status: "approved", approved_at: new Date().toISOString(), approved_single_review: true }).eq("id", c.id);
   if (error) return { error: "Las versiones se guardaron pero no se pudo marcar el ciclo como aprobado. Recarga la página." };
+  await logEvent(ctx.supabase, ctx.user.id, "cycle_approved", c.id, `${plan.versions.length} versiones`);
   revalidatePath(`/ciclos/${c.id}`);
   revalidatePath("/dashboard");
   redirect(`/ciclos/${c.id}`);
@@ -201,7 +209,7 @@ export async function approveAction(_p: ActionState, fd: FormData): Promise<Acti
 export type AiTextState = { error?: string; rows?: AiRow[]; dropped?: Array<{ sku: string; component: string; reason: string }>; text?: string };
 
 export async function aiTextProposeAction(_p: AiTextState, fd: FormData): Promise<AiTextState> {
-  if (CORE_ONLY) return CORE_ONLY_ERROR;
+  if (!AI_TEXT_ENABLED) return FEATURE_OFF_ERROR;
   const ctx = await requireUser();
   const c = await draftCycle(ctx, fd);
   if ("error" in c) return { error: c.error };
@@ -216,7 +224,7 @@ export async function aiTextProposeAction(_p: AiTextState, fd: FormData): Promis
 }
 
 export async function aiTextConfirmAction(_p: ActionState, fd: FormData): Promise<ActionState> {
-  if (CORE_ONLY) return CORE_ONLY_ERROR;
+  if (!AI_TEXT_ENABLED) return FEATURE_OFF_ERROR;
   const ctx = await requireUser();
   const c = await draftCycle(ctx, fd);
   if ("error" in c) return { error: c.error };
@@ -253,7 +261,7 @@ export async function aiTextConfirmAction(_p: ActionState, fd: FormData): Promis
 export type AiPhotoState = { error?: string; draft?: { material: string | null; weightG: number | null; quote: string } };
 
 export async function aiPhotoProposeAction(_p: AiPhotoState, fd: FormData): Promise<AiPhotoState> {
-  if (CORE_ONLY) return CORE_ONLY_ERROR;
+  if (!AI_PHOTO_ENABLED) return FEATURE_OFF_ERROR;
   const ctx = await requireUser();
   const c = await draftCycle(ctx, fd);
   if ("error" in c) return { error: c.error };
@@ -270,7 +278,7 @@ export async function aiPhotoProposeAction(_p: AiPhotoState, fd: FormData): Prom
 }
 
 export async function aiPhotoConfirmAction(_p: ActionState, fd: FormData): Promise<ActionState> {
-  if (CORE_ONLY) return CORE_ONLY_ERROR;
+  if (!AI_PHOTO_ENABLED) return FEATURE_OFF_ERROR;
   const ctx = await requireUser();
   const c = await draftCycle(ctx, fd);
   if ("error" in c) return { error: c.error };

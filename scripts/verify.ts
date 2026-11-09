@@ -11,6 +11,8 @@ import { scanWording } from "../lib/wording";
 import { simBaselineRows, simUpdateRows, simBaselineCsv } from "../lib/simfeed";
 import type { Approved, InRow } from "../lib/types";
 import { checkAiRows, parseAiRows, parsePhoto } from "../lib/ai-parse";
+import * as flags from "../lib/flags";
+import { logEvent } from "../lib/events";
 
 let pass = 0;
 const fails: string[] = [];
@@ -215,12 +217,54 @@ check("wording: allows the honest wording", scanWording("sin sustento; referenci
   check("ai: nothing proposed by a model is ever marked confirmed", good!.every((r) => !("confirmed" in r)));
 }
 
+// ------------------------------------------------------------ Week 13: messy phone-extracted text
+// Real phone OCR (iOS Live Text / Android equivalent) produces text with mid-field line breaks, accents,
+// and abbreviations like "pza" or "kg neto" that clean invented demo data never has. The quote check must
+// still work against that, not only against neatly typed sentences.
+{
+  const messyText = "TAMBO 200L\nTapa rosca PP\nPeso neto: 850 g\nLote NOV-2026\ncod. TAM-200\nProveedor: Químicos del Bajío";
+  const messyRows = parseAiRows(JSON.stringify({
+    rows: [{ sku: "TAM-200", component: "Tapa", material: "PP", weightG: 850, recycledPct: null, supplier: "Químicos del Bajío", evidenceRef: null, quote: "Tapa rosca PP\nPeso neto: 850 g" }],
+  }));
+  check("ai: a quote spanning a line break (real phone OCR shape) still matches", checkAiRows(messyRows!, messyText).kept.length === 1);
+  const accented = parseAiRows(JSON.stringify({
+    rows: [{ sku: "TAM-200", component: "Tambo", material: "PEAD", weightG: null, recycledPct: null, supplier: "Químicos del Bajío", evidenceRef: null, quote: "Proveedor: Químicos del Bajío" }],
+  }));
+  check("ai: accented text matches without being stripped or altered", checkAiRows(accented!, messyText).kept.length === 1);
+  const abbrev = "Tornillo galv. 4mm, cod. TOR-4, 180 pza/caja, 0.9 kg neto por caja";
+  const abbrevRows = parseAiRows(JSON.stringify({
+    rows: [{ sku: "TOR-4", component: "Tornillo", material: "Acero", weightG: 0.9, recycledPct: null, supplier: "S", evidenceRef: null, quote: "180 pza/caja, 0.9 kg neto por caja" }],
+  }));
+  check("ai: a unit abbreviation (pza, kg neto) inside the quote does not block the match", checkAiRows(abbrevRows!, abbrev).kept.length === 1);
+}
+
+// ------------------------------------------------------------ Week 13: flags split (docs/PACKET.md, section 4)
+{
+  check("flags: paste-text is the one re-enabled this week", flags.AI_TEXT_ENABLED === true);
+  check("flags: photo reader stays off (unproven, not this week's fix)", flags.AI_PHOTO_ENABLED === false);
+  check("flags: simulated feed stays off (same reason)", flags.SIM_FEED_ENABLED === false);
+  check("flags: the three gates are independent switches, not one shared boolean", !("CORE_ONLY" in flags));
+}
+
+// ------------------------------------------------------------ Week 13: minimal event log
+async function verifyEvents() {
+  check("events: logEvent is exported for the five required actions to call", typeof logEvent === "function");
+  let threw = false;
+  const failingClient = { from: () => ({ insert: () => { throw new Error("db down"); } }) } as unknown as Parameters<typeof logEvent>[0];
+  try {
+    await logEvent(failingClient, "u1", "cycle_created", null, "x");
+  } catch { threw = true; }
+  check("events: a logging failure never throws (best-effort, never blocks the action it records)", !threw);
+}
+
 // ------------------------------------------------------------ baseline csv sanity
 check("simfeed: baseline CSV text round-trips through the parser", (() => { const r = parseCsv(simBaselineCsv(), { fileName: "x", origin: "simulated" }); return r.ok && r.rows.length === 31; })());
 
-if (fails.length) {
-  console.error(`FAILED ${fails.length} of ${pass + fails.length} checks:`);
-  fails.forEach((f) => console.error(" - " + f));
-  process.exit(1);
-}
-console.log(`ok: ${pass} checks passed`);
+verifyEvents().then(() => {
+  if (fails.length) {
+    console.error(`FAILED ${fails.length} of ${pass + fails.length} checks:`);
+    fails.forEach((f) => console.error(" - " + f));
+    process.exit(1);
+  }
+  console.log(`ok: ${pass} checks passed`);
+});

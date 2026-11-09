@@ -14,7 +14,7 @@ import { ActionForm } from "@/components/action-form";
 import { DecisionForm, type CandidateView } from "@/components/decision-form";
 import { AiPhotoPanel, AiTextPanel } from "@/components/ai-panels";
 import { approveAction, bulkDecideAction, clearRowsAction, importCsvAction, simFeedAction } from "@/app/actions";
-import { CORE_ONLY } from "@/lib/flags";
+import { AI_PHOTO_ENABLED, AI_TEXT_ENABLED, SIM_FEED_ENABLED } from "@/lib/flags";
 import { recycledWithStatus, weightWithStatus } from "@/lib/statusline";
 
 export const dynamic = "force-dynamic";
@@ -145,29 +145,42 @@ export default async function CyclePage({ params }: { params: Promise<{ id: stri
               <textarea name="csv_text" rows={3} className="mt-1 w-full rounded-md border border-slate-300 p-2 font-mono text-xs" />
             </label>
           </ActionForm>
-          {!CORE_ONLY && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded border border-amber-300 bg-amber-50 p-3">
-                <p className="text-sm font-semibold text-amber-900">Alimentación SIMULADA de proveedores (inventada)</p>
-                <p className="text-xs text-amber-900">Empresa y proveedores ficticios. Cada fila queda marcada SIMULADO en pantalla y en la exportación.</p>
-                <div className="flex flex-wrap gap-2">
-                  <ActionForm action={simFeedAction} submit="Cargar base simulada (ciclo 1)" variant="outline">
-                    <input type="hidden" name="cycle_id" value={cycle.id} /><input type="hidden" name="which" value="baseline" />
-                  </ActionForm>
-                  <ActionForm action={simFeedAction} submit="Recibir actualización simulada (ciclo 2)" variant="outline">
-                    <input type="hidden" name="cycle_id" value={cycle.id} /><input type="hidden" name="which" value="update" />
-                  </ActionForm>
+          {AI_TEXT_ENABLED && (
+            <div className="mt-4 space-y-2">
+              <details className="rounded border bg-slate-50 p-3" open>
+                <summary className="cursor-pointer text-sm font-semibold">Ayuda con IA: texto del proveedor (opcional)</summary>
+                <div className="mt-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                  <p className="font-semibold">¿Tienes una foto?</p>
+                  <p className="mt-1">Usa el lector de texto de tu teléfono (Live Text en iPhone, el equivalente en Android) para copiar el contenido de la foto, y pégalo abajo. Cuadre no lee fotos directamente.</p>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <details className="rounded border bg-slate-50 p-3"><summary className="cursor-pointer text-sm font-semibold">Ayuda con IA: texto del proveedor (opcional)</summary><div className="mt-2"><AiTextPanel cycleId={cycle.id} /></div></details>
-                <details className="rounded border bg-slate-50 p-3"><summary className="cursor-pointer text-sm font-semibold">Ayuda con IA: foto de una etiqueta (opcional)</summary><div className="mt-2"><AiPhotoPanel cycleId={cycle.id} /></div></details>
-              </div>
+                <div className="mt-2"><AiTextPanel cycleId={cycle.id} /></div>
+              </details>
             </div>
           )}
-          {CORE_ONLY && (
+          {(SIM_FEED_ENABLED || AI_PHOTO_ENABLED) && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {SIM_FEED_ENABLED && (
+                <div className="rounded border border-amber-300 bg-amber-50 p-3">
+                  <p className="text-sm font-semibold text-amber-900">Alimentación SIMULADA de proveedores (inventada)</p>
+                  <p className="text-xs text-amber-900">Empresa y proveedores ficticios. Cada fila queda marcada SIMULADO en pantalla y en la exportación.</p>
+                  <div className="flex flex-wrap gap-2">
+                    <ActionForm action={simFeedAction} submit="Cargar base simulada (ciclo 1)" variant="outline">
+                      <input type="hidden" name="cycle_id" value={cycle.id} /><input type="hidden" name="which" value="baseline" />
+                    </ActionForm>
+                    <ActionForm action={simFeedAction} submit="Recibir actualización simulada (ciclo 2)" variant="outline">
+                      <input type="hidden" name="cycle_id" value={cycle.id} /><input type="hidden" name="which" value="update" />
+                    </ActionForm>
+                  </div>
+                </div>
+              )}
+              {AI_PHOTO_ENABLED && (
+                <details className="rounded border bg-slate-50 p-3"><summary className="cursor-pointer text-sm font-semibold">Ayuda con IA: foto de una etiqueta (opcional)</summary><div className="mt-2"><AiPhotoPanel cycleId={cycle.id} /></div></details>
+              )}
+            </div>
+          )}
+          {!AI_TEXT_ENABLED && !AI_PHOTO_ENABLED && !SIM_FEED_ENABLED && (
             <p className="mt-4 rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-              La alimentación simulada y las ayudas con IA quedan fuera del núcleo de esta semana (ver «Lo que no construyo esta semana» en el packet). El código sigue en el repositorio y sus pruebas siguen pasando; solo no son alcanzables desde aquí.
+              Por ahora solo se puede traer un CSV. Las demás formas de traer datos están pausadas esta semana.
             </p>
           )}
           {incoming.length > 0 && (

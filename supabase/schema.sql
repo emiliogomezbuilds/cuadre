@@ -81,11 +81,25 @@ create table public.consents (
   created_at timestamptz not null default now()
 );
 
+-- ---------------------------------------------------------------- events (Week 13: the minimal event log
+-- required by this week's ship checklist, "Same stack + an analytics/feedback mechanism (even a simple
+-- event log)". Append-only, no update or delete policy, same shape as decisions/versions. Not a dashboard:
+-- just a durable record that an action happened, who did it, and when.
+create table public.events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  cycle_id uuid references public.cycles(id) on delete cascade,
+  action text not null check (action in ('cycle_created', 'file_imported', 'exception_decided', 'cycle_approved', 'export_downloaded')),
+  detail text check (detail is null or char_length(detail) <= 200),
+  created_at timestamptz not null default now()
+);
+
 create index on public.cycles (user_id, number);
 create index on public.rows (cycle_id);
 create index on public.decisions (cycle_id, key, created_at desc);
 create index on public.versions (user_id, key, version desc);
 create index on public.consents (user_id, purpose, created_at desc);
+create index on public.events (user_id, cycle_id, created_at desc);
 
 -- ---------------------------------------------------------------- RLS on every table
 alter table public.cycles enable row level security;
@@ -93,6 +107,7 @@ alter table public.rows enable row level security;
 alter table public.decisions enable row level security;
 alter table public.versions enable row level security;
 alter table public.consents enable row level security;
+alter table public.events enable row level security;
 
 -- cycles: own rows. A cycle can be edited only while it is a draft; approving it freezes it.
 create policy "cycles select own" on public.cycles for select using (user_id = auth.uid());
@@ -124,3 +139,8 @@ create policy "versions insert own" on public.versions for insert with check (us
 create policy "consents select own" on public.consents for select using (user_id = auth.uid());
 create policy "consents insert own" on public.consents for insert with check (user_id = auth.uid());
 create policy "consents delete own" on public.consents for delete using (user_id = auth.uid());
+
+-- events: append-only, readable by their own user, deletable with "delete my data". No update policy.
+create policy "events select own" on public.events for select using (user_id = auth.uid());
+create policy "events insert own" on public.events for insert with check (user_id = auth.uid());
+create policy "events delete own" on public.events for delete using (user_id = auth.uid());
