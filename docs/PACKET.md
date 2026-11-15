@@ -106,4 +106,8 @@ Unchanged in substance from `CHARTER.md`'s north star — a timed, honest 10:1 r
 
 | Commit | Time | What |
 |---|---|---|
-| (filled at close) | | This packet |
+| `46c5ba4` | 15 Nov 2026, 01:09 | This packet (docs/PACKET.md, docs/PACKET_W13.md archive, docs/mockup_w14_pricing.png) — committed before any Week 14 code |
+| `528b9a1` | 15 Nov 2026 | Shadow-clause export fix (lib/export.ts, scripts/verify.ts) — before /pricing itself was built |
+| `e089650` | 15 Nov 2026 | /pricing, simulator, saved scenarios, scenarios table, /about 10:1 memo — 128 checks |
+| `7ee4bac` | 15 Nov 2026 | Real pricing conversation with Mauricio, logged in DECISIONS.md |
+| `6c95f63` | 15 Nov 2026 | Persona-pass fix: simulator display clamped to the same ceiling the database enforces — 130 checks |
