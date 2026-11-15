@@ -16,6 +16,13 @@ export interface ExportComponent {
 export const NO_SUPPORT = "sin sustento";
 export const DECLARED = "referencia declarada por el proveedor, no verificada por Cuadre";
 
+// Week 14 shadow clause (Brain Bending fight, CHAT_EmilioGomez.pdf): a customer must never be able to mistake this
+// export for a formal declaration of conformity (e.g. under the EU's PPWR). This line is a non-removable field in
+// every exported file — not page copy on /pricing, which a redesign could silently drop — and scripts/verify.ts
+// fails the build if any export path produces a file without it. It travels on every row, the same discipline
+// Principle 4 already applies to a value's status.
+export const EVIDENCE_DISCLAIMER = "soporte de evidencia, no es una declaración de conformidad";
+
 export function evidenceStatus(a: Approved): string {
   const parts: string[] = [];
   if (a.origin === "simulated") parts.push("SIMULADO");
@@ -48,7 +55,7 @@ const row = (cells: unknown[]) => cells.map(q).join(",");
 
 // valor_con_estado (Week 12, CHARTER.md Principle 4): the weight and the recycled-content figure repeated
 // with their status attached in the same cell, so a copy of just this column keeps the status with the value.
-export const EVIDENCE_HEADER = ["sku", "componente", "material", "peso_g", "reciclado_pct", "afirmacion_reciclado", "referencia_evidencia", "proveedor", "estado_evidencia", "version", "ciclo", "fuente", "decision", "motivo", "estado", "revision", "valor_con_estado"];
+export const EVIDENCE_HEADER = ["sku", "componente", "material", "peso_g", "reciclado_pct", "afirmacion_reciclado", "referencia_evidencia", "proveedor", "estado_evidencia", "version", "ciclo", "fuente", "decision", "motivo", "estado", "revision", "valor_con_estado", "aviso"];
 
 const DECISION_ES: Record<Choice, string> = {
   accept_new: "aceptar", keep_previous: "conservar el anterior", request_supplier: "pedir dato al proveedor", reject_row: "rechazar fila",
@@ -70,6 +77,7 @@ export function evidenceCsv(items: ExportComponent[]): string {
         it.decision?.reason ?? "", it.openRequest ? "pendiente de proveedor (se conserva el valor anterior)" : "vigente",
         it.singleReview ? "revisión por una sola persona" : "revisión por dos personas",
         `peso: ${weightWithStatus(a.weightG, a.sourceKind)}; reciclado: ${recycledWithStatus(a.recycledPct, a.evidenceRef)}`,
+        EVIDENCE_DISCLAIMER,
       ]),
     );
   }
@@ -78,7 +86,7 @@ export function evidenceCsv(items: ExportComponent[]): string {
 
 export interface LogEntry { cycleName: string; key: string; choice: Choice; reason: string; bulk: boolean; at: string; singleReview: boolean }
 export function decisionLogCsv(items: LogEntry[]): string {
-  const lines = [row(["ciclo", "componente", "decision", "motivo", "en_bloque", "fecha", "revision"])];
-  for (const e of items) lines.push(row([e.cycleName, e.key.replace("|", " · "), DECISION_ES[e.choice], e.reason, e.bulk ? "sí" : "no", e.at, e.singleReview ? "revisión por una sola persona" : "revisión por dos personas"]));
+  const lines = [row(["ciclo", "componente", "decision", "motivo", "en_bloque", "fecha", "revision", "aviso"])];
+  for (const e of items) lines.push(row([e.cycleName, e.key.replace("|", " · "), DECISION_ES[e.choice], e.reason, e.bulk ? "sí" : "no", e.at, e.singleReview ? "revisión por una sola persona" : "revisión por dos personas", EVIDENCE_DISCLAIMER]));
   return "﻿" + lines.join("\r\n") + "\r\n";
 }

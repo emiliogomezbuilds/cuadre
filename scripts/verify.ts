@@ -4,7 +4,7 @@ import path from "node:path";
 import { parseCsv, MAX_ROWS } from "../lib/parse";
 import { reconcile, keyOf, type Exception } from "../lib/engine";
 import { allowedChoices, bulkEligible, validateDecision, planApproval, pendingExceptions, type Decision } from "../lib/decisions";
-import { evidenceCsv, decisionLogCsv, evidenceStatus, recycledClaim, EVIDENCE_HEADER, type ExportComponent } from "../lib/export";
+import { evidenceCsv, decisionLogCsv, evidenceStatus, recycledClaim, EVIDENCE_HEADER, EVIDENCE_DISCLAIMER, type ExportComponent } from "../lib/export";
 import { weightWithStatus, recycledWithStatus } from "../lib/statusline";
 import { effort } from "../lib/effort";
 import { scanWording } from "../lib/wording";
@@ -154,7 +154,13 @@ check("export: an approved 0 % is written as 0, not left empty", zero[4] === "0"
 check("export: CSV escapes commas and quotes", evidenceCsv([{ ...comps[0], approved: { ...comps[0].approved, component: 'Tapa "grande", azul' } }]).includes('"Tapa ""grande"", azul"'));
 
 // ------------------------------------------------------------ week 12: status travels with the value
-check("export: header ends with valor_con_estado", EVIDENCE_HEADER[EVIDENCE_HEADER.length - 1] === "valor_con_estado");
+check("export: header's status column is valor_con_estado, second-to-last", EVIDENCE_HEADER[EVIDENCE_HEADER.length - 2] === "valor_con_estado");
+
+// ------------------------------------------------------------ week 14: shadow clause, evidence vs. declaration of conformity
+check("export: header ends with the non-removable disclaimer column", EVIDENCE_HEADER[EVIDENCE_HEADER.length - 1] === "aviso");
+check("export: every evidence row carries the disclaimer, every time, not just page copy", comps.length > 0 && evidenceCsv(comps).trim().split("\r\n").slice(1).every((l) => l.includes(EVIDENCE_DISCLAIMER)));
+check("export: the decision log also carries the disclaimer on every row", log.trim().split("\r\n").slice(1).every((l) => l.includes(EVIDENCE_DISCLAIMER)));
+check("export: the disclaimer text itself says 'no es una declaración de conformidad'", EVIDENCE_DISCLAIMER.includes("no es una declaración de conformidad"));
 // ------------------------------------------------------------ week 12: persona test (Karla) finding
 {
   const idComp = { ...comps[0], approved: { ...comps[0].approved, sku: "GEL-250", component: "Frasco" } };
