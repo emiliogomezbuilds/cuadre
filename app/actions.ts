@@ -13,6 +13,7 @@ import { AI_DAILY_LIMIT, AI_IMAGE_MAX_BYTES, AI_TEXT_MAX, IMAGE_TYPES, draftFrom
 import { checkAiRows, type AiRow } from "@/lib/ai-parse";
 import { AI_TEXT_ENABLED, AI_PHOTO_ENABLED, SIM_FEED_ENABLED } from "@/lib/flags";
 import { logEvent } from "@/lib/events";
+import { bandById, projectRevenue, type Segment } from "@/lib/pricing";
 
 // Scope cut, enforced server-side, not only hidden in the UI. A bug found in Week 12's own mechanical
 // pass: the AI and simulated-feed actions were hidden from the screen but still callable directly. Every
@@ -309,7 +310,38 @@ export async function deleteAllDataAction() {
   const { supabase, user } = await requireUser();
   await supabase.from("cycles").delete().eq("user_id", user.id); // cascades to rows, decisions and versions
   await supabase.from("consents").delete().eq("user_id", user.id);
+  await supabase.from("scenarios").delete().eq("user_id", user.id);
   revalidatePath("/dashboard");
   redirect("/dashboard?deleted=1");
+}
+
+// ------------------------------------------------------------------ pricing simulator (Week 14, docs/PACKET.md)
+export async function saveScenarioAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const name = text(fd.get("name"), 1, 60);
+  if (!name) return { error: "Escribe un nombre para el escenario (hasta 60 caracteres)." };
+  const segment = String(fd.get("segment") ?? "");
+  if (segment !== "export" && segment !== "domestic") return { error: "Elige un segmento: nada viene elegido de antemano." };
+  const band = bandById(String(fd.get("band_id") ?? ""));
+  if (!band) return { error: "Elige una banda de precio válida." };
+  const customers = num(fd.get("customers"), 0, 100000);
+  const cycles = num(fd.get("cycles_per_year"), 0, 1000);
+  if (customers === null || cycles === null) return { error: "Escribe números válidos de clientes y ciclos por año." };
+  const projection = projectRevenue({ segment: segment as Segment, bandId: band.id, customers, cyclesPerCustomerPerYear: cycles });
+  const { error } = await supabase.from("scenarios").insert({
+    user_id: user.id, name, segment, band_id: band.id, customers: Math.floor(customers), cycles_per_year: cycles,
+    annual_mxn: projection.annualMXN, monthly_mxn: projection.monthlyMXN,
+  });
+  if (error) return { error: "No se pudo guardar el escenario. Intenta de nuevo." };
+  revalidatePath("/pricing");
+  return { ok: `Escenario «${name}» guardado.` };
+}
+
+export async function deleteScenarioAction(fd: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = uuid(fd.get("scenario_id"));
+  if (id) await supabase.from("scenarios").delete().eq("id", id).eq("user_id", user.id);
+  revalidatePath("/pricing");
+  redirect("/pricing");
 }
 

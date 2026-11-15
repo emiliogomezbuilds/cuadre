@@ -94,12 +94,28 @@ create table public.events (
   created_at timestamptz not null default now()
 );
 
+-- ---------------------------------------------------------------- scenarios (Week 14: saved revenue-simulator
+-- scenarios, the stack-floor requirement "working calculator logic with saved scenarios")
+create table public.scenarios (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  name text not null check (char_length(name) between 1 and 60),
+  segment text not null check (segment in ('export', 'domestic')),
+  band_id text not null check (band_id in ('low', 'mid', 'high')),
+  customers int not null check (customers between 0 and 100000),
+  cycles_per_year numeric not null check (cycles_per_year between 0 and 1000),
+  annual_mxn numeric not null check (annual_mxn >= 0),
+  monthly_mxn numeric not null check (monthly_mxn >= 0),
+  created_at timestamptz not null default now()
+);
+
 create index on public.cycles (user_id, number);
 create index on public.rows (cycle_id);
 create index on public.decisions (cycle_id, key, created_at desc);
 create index on public.versions (user_id, key, version desc);
 create index on public.consents (user_id, purpose, created_at desc);
 create index on public.events (user_id, cycle_id, created_at desc);
+create index on public.scenarios (user_id, created_at desc);
 
 -- ---------------------------------------------------------------- RLS on every table
 alter table public.cycles enable row level security;
@@ -108,6 +124,7 @@ alter table public.decisions enable row level security;
 alter table public.versions enable row level security;
 alter table public.consents enable row level security;
 alter table public.events enable row level security;
+alter table public.scenarios enable row level security;
 
 -- cycles: own rows. A cycle can be edited only while it is a draft; approving it freezes it.
 create policy "cycles select own" on public.cycles for select using (user_id = auth.uid());
@@ -144,3 +161,8 @@ create policy "consents delete own" on public.consents for delete using (user_id
 create policy "events select own" on public.events for select using (user_id = auth.uid());
 create policy "events insert own" on public.events for insert with check (user_id = auth.uid());
 create policy "events delete own" on public.events for delete using (user_id = auth.uid());
+
+-- scenarios: own rows only, deletable (a saved pricing scenario is scratch work, not an append-only record).
+create policy "scenarios select own" on public.scenarios for select using (user_id = auth.uid());
+create policy "scenarios insert own" on public.scenarios for insert with check (user_id = auth.uid());
+create policy "scenarios delete own" on public.scenarios for delete using (user_id = auth.uid());

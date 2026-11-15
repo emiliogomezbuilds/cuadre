@@ -13,6 +13,7 @@ import type { Approved, InRow } from "../lib/types";
 import { checkAiRows, parseAiRows, parsePhoto } from "../lib/ai-parse";
 import * as flags from "../lib/flags";
 import { logEvent } from "../lib/events";
+import { BANDS, bandForDeclaredValue, bandById, projectRevenue, BASE_ANCHOR_MXN } from "../lib/pricing";
 
 let pass = 0;
 const fails: string[] = [];
@@ -261,6 +262,30 @@ async function verifyEvents() {
     await logEvent(failingClient, "u1", "cycle_created", null, "x");
   } catch { threw = true; }
   check("events: a logging failure never throws (best-effort, never blocks the action it records)", !threw);
+}
+
+// ------------------------------------------------------------ Week 14: pricing bands and simulator (docs/PACKET.md)
+// Declared-value bands, not cycle-frequency tiers (CHAT_EmilioGomez.pdf): price must scale with what's at risk in
+// a cycle, not how often the tool is used. These checks protect that shape, not just the arithmetic.
+{
+  check("pricing: three bands, strictly increasing price with declared value", BANDS.length === 3 && BANDS[0].priceMXNPerCycle < BANDS[1].priceMXNPerCycle && BANDS[1].priceMXNPerCycle < BANDS[2].priceMXNPerCycle);
+  check("pricing: the base anchor is the low band's price, unmodified", BANDS[0].priceMXNPerCycle === BASE_ANCHOR_MXN);
+  check("pricing: only the top band is unbounded", BANDS.filter((b) => b.maxDeclaredValueMXN === null).length === 1 && BANDS[BANDS.length - 1].maxDeclaredValueMXN === null);
+  check("pricing: a low declared value lands in the low band", bandForDeclaredValue(100_000).id === "low");
+  check("pricing: a value right at a boundary lands in that (lower) band, not the next one", bandForDeclaredValue(500_000).id === "low");
+  check("pricing: a value just above a boundary lands in the next band", bandForDeclaredValue(500_001).id === "mid");
+  check("pricing: a very large declared value lands in the unbounded top band", bandForDeclaredValue(50_000_000).id === "high");
+  check("pricing: bandById finds a real band and returns null for an unknown id", bandById("mid")?.id === "mid" && bandById("nope") === null);
+
+  const proj = projectRevenue({ segment: "export", bandId: "mid", customers: 12, cyclesPerCustomerPerYear: 4 });
+  check("pricing: annual revenue is customers x cycles x the band's per-cycle price", proj.annualMXN === 12 * 4 * (bandById("mid")!.priceMXNPerCycle));
+  check("pricing: monthly is annual / 12, not independently rounded", proj.monthlyMXN === proj.annualMXN / 12);
+  check("pricing: two customers running the same cycle count but different declared-value bands are priced differently (not SaaS-shaped, frequency alone doesn't set price)",
+    projectRevenue({ segment: "export", bandId: "low", customers: 1, cyclesPerCustomerPerYear: 6 }).annualMXN !==
+    projectRevenue({ segment: "export", bandId: "high", customers: 1, cyclesPerCustomerPerYear: 6 }).annualMXN);
+  check("pricing: zero customers or zero cycles yields zero revenue, not an error", projectRevenue({ segment: "domestic", bandId: "low", customers: 0, cyclesPerCustomerPerYear: 4 }).annualMXN === 0 && projectRevenue({ segment: "domestic", bandId: "low", customers: 5, cyclesPerCustomerPerYear: 0 }).annualMXN === 0);
+  check("pricing: negative or fractional customer counts are floored, never negative revenue", projectRevenue({ segment: "export", bandId: "low", customers: -5, cyclesPerCustomerPerYear: 4 }).annualMXN === 0 && projectRevenue({ segment: "export", bandId: "low", customers: 2.9, cyclesPerCustomerPerYear: 4 }).annualMXN === projectRevenue({ segment: "export", bandId: "low", customers: 2, cyclesPerCustomerPerYear: 4 }).annualMXN);
+  check("pricing: an unrecognized band id falls back to the lowest band rather than throwing", projectRevenue({ segment: "export", bandId: "nope", customers: 1, cyclesPerCustomerPerYear: 1 }).pricePerCycleMXN === BANDS[0].priceMXNPerCycle);
 }
 
 // ------------------------------------------------------------ baseline csv sanity
