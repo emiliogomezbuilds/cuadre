@@ -286,6 +286,12 @@ async function verifyEvents() {
   check("pricing: zero customers or zero cycles yields zero revenue, not an error", projectRevenue({ segment: "domestic", bandId: "low", customers: 0, cyclesPerCustomerPerYear: 4 }).annualMXN === 0 && projectRevenue({ segment: "domestic", bandId: "low", customers: 5, cyclesPerCustomerPerYear: 0 }).annualMXN === 0);
   check("pricing: negative or fractional customer counts are floored, never negative revenue", projectRevenue({ segment: "export", bandId: "low", customers: -5, cyclesPerCustomerPerYear: 4 }).annualMXN === 0 && projectRevenue({ segment: "export", bandId: "low", customers: 2.9, cyclesPerCustomerPerYear: 4 }).annualMXN === projectRevenue({ segment: "export", bandId: "low", customers: 2, cyclesPerCustomerPerYear: 4 }).annualMXN);
   check("pricing: an unrecognized band id falls back to the lowest band rather than throwing", projectRevenue({ segment: "export", bandId: "nope", customers: 1, cyclesPerCustomerPerYear: 1 }).pricePerCycleMXN === BANDS[0].priceMXNPerCycle);
+
+  // Week 14 Persona pass (live on cuadre.dev): an unrealistic input (999,999,999 clients) produced an absurd,
+  // unclamped on-screen projection. The live simulator and a saved scenario must respect the same ceiling.
+  const unrealistic = projectRevenue({ segment: "export", bandId: "high", customers: 999_999_999, cyclesPerCustomerPerYear: 999_999 });
+  check("pricing: an unrealistic customer count is clamped to the same ceiling the database enforces on save (100,000), not shown unclamped", unrealistic.annualMXN === 100_000 * 1_000 * (bandById("high")!.priceMXNPerCycle));
+  check("pricing: clamping the display ceiling never produces a smaller number than a value actually inside the real range", projectRevenue({ segment: "export", bandId: "high", customers: 100_000, cyclesPerCustomerPerYear: 1_000 }).annualMXN === unrealistic.annualMXN);
 }
 
 // ------------------------------------------------------------ baseline csv sanity

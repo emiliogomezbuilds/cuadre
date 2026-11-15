@@ -56,10 +56,17 @@ export interface ScenarioProjection {
   monthlyMXN: number;
 }
 
+// Same bounds as the scenarios table's own check constraints (supabase/schema.sql). A save was always rejected
+// past these limits; the live simulator was not, so typing an unrealistic number (Week 14 Persona pass, live on
+// cuadre.dev: 999,999,999 clients) produced an absurd on-screen projection with no guardrail. Clamping here means
+// the number shown and the number a save would accept are always the same number, not two different promises.
+const MAX_CUSTOMERS = 100_000;
+const MAX_CYCLES_PER_YEAR = 1_000;
+
 export function projectRevenue(input: ScenarioInput): ScenarioProjection {
   const band = bandById(input.bandId) ?? BANDS[0];
-  const customers = Math.max(0, Math.floor(input.customers));
-  const cycles = Math.max(0, input.cyclesPerCustomerPerYear);
+  const customers = Math.min(MAX_CUSTOMERS, Math.max(0, Math.floor(input.customers)));
+  const cycles = Math.min(MAX_CYCLES_PER_YEAR, Math.max(0, input.cyclesPerCustomerPerYear));
   const annualMXN = customers * cycles * band.priceMXNPerCycle;
   return {
     pricePerCycleMXN: band.priceMXNPerCycle,
