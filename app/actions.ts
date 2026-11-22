@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { CONSENT_VERSION, requireUser } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
+import { parseSignupInput } from "@/lib/signup";
 import { num, text, uuid } from "@/lib/validate";
 import { MAX_BYTES, parseCsv, parseKind } from "@/lib/parse";
 import { loadCycle } from "@/lib/data";
@@ -343,5 +345,16 @@ export async function deleteScenarioAction(fd: FormData) {
   if (id) await supabase.from("scenarios").delete().eq("id", id).eq("user_id", user.id);
   revalidatePath("/pricing");
   redirect("/pricing");
+}
+
+// ------------------------------------------------------------------ public capture (Week 15, docs/PACKET.md)
+// Deliberately no requireUser(): the whole point of this action is a path that does not gate on sign-in.
+export async function submitSignupAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  const parsed = parseSignupInput(fd);
+  if (!parsed.ok) return { error: parsed.error };
+  const supabase = await createClient();
+  const { error } = await supabase.from("signups").insert(parsed.data);
+  if (error) return { error: "No se pudo enviar. Intenta de nuevo." };
+  return { ok: "Gracias, te contactamos pronto." };
 }
 

@@ -109,6 +109,20 @@ create table public.scenarios (
   created_at timestamptz not null default now()
 );
 
+-- ---------------------------------------------------------------- signups (Week 15: the real distribution
+-- test's capture table — a public, no-sign-in opt-in form. No select policy for any app role: the raw
+-- export is read directly via the Supabase SQL editor, never exposed through the app, since this table
+-- holds real contact information from real people, not a signed-in user's own rows.
+create table public.signups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (char_length(name) between 1 and 80),
+  contact text not null check (char_length(contact) between 3 and 120),
+  role_title text check (role_title is null or char_length(role_title) <= 80),
+  message text check (message is null or char_length(message) <= 300),
+  source text not null default 'other' check (source in ('linkedin_cold', 'other')),
+  created_at timestamptz not null default now()
+);
+
 create index on public.cycles (user_id, number);
 create index on public.rows (cycle_id);
 create index on public.decisions (cycle_id, key, created_at desc);
@@ -116,6 +130,7 @@ create index on public.versions (user_id, key, version desc);
 create index on public.consents (user_id, purpose, created_at desc);
 create index on public.events (user_id, cycle_id, created_at desc);
 create index on public.scenarios (user_id, created_at desc);
+create index on public.signups (created_at desc);
 
 -- ---------------------------------------------------------------- RLS on every table
 alter table public.cycles enable row level security;
@@ -125,6 +140,7 @@ alter table public.versions enable row level security;
 alter table public.consents enable row level security;
 alter table public.events enable row level security;
 alter table public.scenarios enable row level security;
+alter table public.signups enable row level security;
 
 -- cycles: own rows. A cycle can be edited only while it is a draft; approving it freezes it.
 create policy "cycles select own" on public.cycles for select using (user_id = auth.uid());
@@ -166,3 +182,7 @@ create policy "events delete own" on public.events for delete using (user_id = a
 create policy "scenarios select own" on public.scenarios for select using (user_id = auth.uid());
 create policy "scenarios insert own" on public.scenarios for insert with check (user_id = auth.uid());
 create policy "scenarios delete own" on public.scenarios for delete using (user_id = auth.uid());
+
+-- signups: anyone can submit, including anonymous visitors. No select, update or delete policy for any
+-- app role — intentionally unreadable through the app itself.
+create policy "signups insert anyone" on public.signups for insert to anon, authenticated with check (true);

@@ -14,6 +14,7 @@ import { checkAiRows, parseAiRows, parsePhoto } from "../lib/ai-parse";
 import * as flags from "../lib/flags";
 import { logEvent } from "../lib/events";
 import { BANDS, bandForDeclaredValue, bandById, projectRevenue, BASE_ANCHOR_MXN } from "../lib/pricing";
+import { parseSignupInput } from "../lib/signup";
 
 let pass = 0;
 const fails: string[] = [];
@@ -292,6 +293,35 @@ async function verifyEvents() {
   const unrealistic = projectRevenue({ segment: "export", bandId: "high", customers: 999_999_999, cyclesPerCustomerPerYear: 999_999 });
   check("pricing: an unrealistic customer count is clamped to the same ceiling the database enforces on save (100,000), not shown unclamped", unrealistic.annualMXN === 100_000 * 1_000 * (bandById("high")!.priceMXNPerCycle));
   check("pricing: clamping the display ceiling never produces a smaller number than a value actually inside the real range", projectRevenue({ segment: "export", bandId: "high", customers: 100_000, cyclesPerCustomerPerYear: 1_000 }).annualMXN === unrealistic.annualMXN);
+}
+
+// ------------------------------------------------------------ Week 15: public capture form (docs/PACKET.md)
+// Pure validation only — no Supabase, no network. The real test this week is the 15 real LinkedIn messages
+// and whatever the live signups table shows, not this function; this just guards the input on the way in.
+{
+  const fakeForm = (fields: Record<string, string>) => ({
+    get: (k: string) => (k in fields ? fields[k] : null),
+  });
+  const base = { name: "Mauricio Sánchez", contact: "mauricio@empresa.mx" };
+
+  const ok1 = parseSignupInput(fakeForm(base));
+  check("signup: minimal valid input (name + contact only) is accepted", ok1.ok && ok1.data.role_title === null && ok1.data.message === null && ok1.data.source === "other");
+
+  check("signup: missing name is rejected", !parseSignupInput(fakeForm({ contact: "a@b.mx" })).ok);
+  check("signup: missing contact is rejected", !parseSignupInput(fakeForm({ name: "A" })).ok);
+  check("signup: a 2-character contact (below the minimum) is rejected", !parseSignupInput(fakeForm({ name: "A", contact: "ab" })).ok);
+  check("signup: a name over 80 characters is rejected", !parseSignupInput(fakeForm({ name: "x".repeat(81), contact: "a@b.mx" })).ok);
+
+  const withExtras = parseSignupInput(fakeForm({ ...base, role_title: "Comercio exterior", message: "Se detuvo un embarque." }));
+  check("signup: optional role and message pass through when present", withExtras.ok && withExtras.data.role_title === "Comercio exterior" && withExtras.data.message === "Se detuvo un embarque.");
+
+  check("signup: an over-long optional role is rejected, not silently truncated", !parseSignupInput(fakeForm({ ...base, role_title: "x".repeat(81) })).ok);
+  check("signup: an over-long optional message is rejected, not silently truncated", !parseSignupInput(fakeForm({ ...base, message: "x".repeat(301) })).ok);
+
+  const cold = parseSignupInput(fakeForm({ ...base, source: "linkedin_cold" }));
+  check("signup: the one real tagged source is preserved exactly", cold.ok && cold.data.source === "linkedin_cold");
+  const spoofed = parseSignupInput(fakeForm({ ...base, source: "made_up_source" }));
+  check("signup: an untagged or spoofed source value collapses to 'other', never passed through as-is (the Blueprint's condition: warm contacts never contaminate the cold count)", spoofed.ok && spoofed.data.source === "other");
 }
 
 // ------------------------------------------------------------ baseline csv sanity
