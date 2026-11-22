@@ -26,8 +26,8 @@ export default async function ContactoPage({
       </div>
 
       <p className="mt-6 max-w-lg text-xs text-slate-500">
-        No calificamos cuotas ni ofrecemos asesoría legal. No verificamos que algo se haya reciclado. Cada registro
-        queda con fecha y hora; no se usa para ningún otro fin.
+        Esto no es una cotización ni una promesa de precio — solo queremos saber si esto te pasó. Tu información se
+        usa únicamente para contactarte sobre Cuadre, con fecha y hora de registro; no se usa para ningún otro fin.
       </p>
     </Shell>
   );
