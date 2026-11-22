@@ -120,4 +120,8 @@ Unchanged in substance from `CHARTER.md` and Week 14's packet: a durable channel
 
 | Commit | Time | What |
 |---|---|---|
-| (filled at close) | | This packet |
+| `a4e33fa` | 22 Nov 2026, 12:50 | This packet (docs/PACKET.md, docs/PACKET_W14.md archive, docs/mockup_w15_contacto.png) — committed before any Week 15 code |
+| `4292bb6` | 22 Nov 2026, 12:52 | `signups` table, `/contacto` public capture page, `lib/signup.ts` validation — 140 checks |
+| `e5b6948` | 22 Nov 2026, 13:34 | Persona-pass fix: removed copy-paste disclaimer residue from `/contacto`, rewritten for its real audience |
+| `28ad5e2` | 22 Nov 2026, 13:34 | Second finished creative asset: "número con estatus" image card |
+| `de56514` | 22 Nov 2026, 13:35 | DECISIONS.md: Brain Bending confession, build log, Persona-pass finding |
