@@ -1,113 +1,123 @@
-# PACKET: Cuadre (Week 14 — pricing)
+# PACKET: Cuadre (Week 15 — distribution)
 
-Week 14 · Business Bending · **Emilio Gómez González** · Team 6 (rotation changed this week) · role MONEY
-Venture: **Cuadre**, continued from Weeks 11–13. Live at **https://cuadre.dev**. Written 15 November 2026, before any Week 14 code. The Week 13 packet is kept as `PACKET_W13.md`. The charter is `CHARTER.md`; this week's Brain Bending fight (`CHAT_EmilioGomez.pdf`) and the team Blueprint (`BLUEPRINT_Team6_Week14.pdf`) set the terms below — declared build: a scoped-cycle offer, payer qualification, and a cost sheet (Blueprint Conditions 1–3).
+Week 15 · Business Bending · **Emilio Gómez González** · Team6 · role OPERATOR
+Venture: **Cuadre**, continued from Weeks 11–14. Live at **https://cuadre.dev**. Written 22 November 2026, before any Week 15 code. The Week 14 packet is kept as `PACKET_W14.md`. This week's Brain Bending fight (`CHAT_EmilioGomez.pdf`) and the team Blueprint (`BLUEPRINT_team week 15.pdf`) set the terms below.
 
 ## 1. Problem, in my words
 
-Cuadre has never had a price, and the fight this week found that the honest reason isn't laziness — it's that the two most tempting pricing stories both collapse under their own evidence. Story one, a regulatory payer: Mexico's Ley General de Economía Circular (19 Jan 2026) created the legal basis for extended producer responsibility, but its Reglamento — the piece that would force a specific producer or importer to act — missed its own 180-day deadline in July and was still "en proceso" as of the most recent check. No domestic regulatory payer exists today. Story two, a SaaS subscription: the value Cuadre actually protects against — a held shipment, a stopped production line, a costly packaging mismatch — is event-driven and contingent, not a steady monthly habit, so a flat recurring fee prices the wrong shape of value entirely. What's real instead: Mexican exporters already face a live, foreign-buyer-driven trigger — the EU's Packaging and Packaging Waste Regulation (importer obligations in force since 12 August 2026) and California's SB 54 (regulations finalized May 2026) both require packaging documentation from a supplier today, with no dependency on Mexican law. That's a narrower market than "every Mexican producer," and it's unconfirmed whether the one real contact available this week (Mauricio, from Week 13's sessions) is even in it.
+Three weeks of Week 13's own recruiting precommit — LinkedIn cold outreach to real strangers, 30-40 messages, before any referral — were written down and quietly skipped under deadline pressure, each time for the same reason. Every real Cuadre tester so far arrived through a warm introduction. Checking the repo directly (not memory) found a second, compounding gap: no lightweight opt-in exists anywhere in the app — the only path for a cold visitor is full Google sign-in. So the honest Week 15 problem isn't which audience or voice to lead with (that fight happened under Money in Week 14 and mostly landed); it's that the mechanical pipe from a stranger seeing something to a stranger landing somewhere to a stranger acting does not exist yet, in either direction, and has never been tested on anyone who didn't already know someone on the team.
 
-## 2. Exact user (and exact payer — this week's actual question)
+## 2. Exact user (and the payer, unchanged from Week 14)
 
-The user is unchanged from `CHARTER.md`: a packaging-data coordinator at a small-to-mid Mexican producer or importer. The payer is not that person — five real sessions in Week 13 independently found the coordinator never controls a budget line. Who actually signs a recurring expense is still Unknown, not Estimated: no session asked the question of an actual budget holder. This week's required real pricing conversation (see section 3) is the first attempt to close that gap, not a confirmation of it.
+User: a comercio exterior / control de inventario / logística coordinator at a small-to-mid Mexican exporter — the same roles the Week 13 precommit named, never actually cold-tested. Payer: someone like Felipe, a boss who approves a line item up to roughly MXN 10,000/year without a fight (his own stated ceiling, Week 14). This week's user-facing surface is the capture page itself, built for a cold stranger with zero context, not a signed-in user.
 
 ## 3. Success definition
 
-Before the module closes, at **https://cuadre.dev**: `/pricing` states a scoped-cycle offer — a per-reconciliation-cycle fee, banded by declared shipment/inventory value (not by frequency of use, since the value is risk-shaped, not usage-shaped) — across two segments (export-facing vs. domestic-only), with a working revenue simulator (inputs: number of customers, cycles per customer per year, price band → monthly/annual projection, assumptions visible, scenarios savable). `/about` carries a one-page 10:1 memo that states plainly what is measured and what is not: the per-cycle anchor (MXN 2,000, explicitly disclosed as a deliberately round test number, not derived from any user's reported cost) is tested against an actual potential payer this week, and the result — whatever it is — is recorded, not smoothed over into a confident claim the evidence doesn't support.
+Before the module closes: a lightweight capture page at **https://cuadre.dev/contacto** that takes no sign-in, validates its own input, and writes a timestamped row to a `signups` table — tagged by source (`linkedin_cold` vs. everything else), so warm contacts can never contaminate the cold test's own count. 15 real LinkedIn messages, sent only to real strangers in the precommitted target roles, by end of day Tuesday 24 November — two full days before the demo script is opened — each pointing at `/contacto?src=linkedin_cold` and nowhere else. The only evidence this submission carries for "Distribution test" and "Honest results" is a raw export of that table: real rows and timestamps, or a genuinely empty export if nothing came in. Declared in this week's Blueprint: test the opt-in flow, without sign-in, **before** sending a single cold message — so the pipe is proven end-to-end before it depends on a stranger ever using it.
 
 ## 4. The one core feature (scope cut)
 
-**A scoped-cycle pricing offer, a payer-qualification question set, and a cost sheet — not a finished billing system.** This is the Blueprint's Conditions 1–3, and this week's declared build.
+**A public, no-sign-in opt-in capture page with a source-tagged, timestamped, append-only record — not a CRM, not an automated follow-up, not a finished campaign.**
 
 New this week, in order of commits:
 1. This packet (before code).
-2. `/pricing`: 2-3 tiers as declared-value bands (not cycle-frequency bands — the Brain Bending fight's own correction), 2 segments (export-facing, domestic-only), explicit "tested anchor, not a derived price" disclosure.
-3. Revenue simulator with saved scenarios (this week's required stack addition): inputs visible, assumptions visible, a `scenarios` table so a saved projection survives a reload.
-4. `/about` 10:1 memo: one page, what the user does today (a spreadsheet, retyping, no timed baseline), what it costs (not measured — stated as such, not invented), the price, and the honest state of the ratio.
-5. The shadow-clause mechanism from this week's fight: the evidence export carries a non-removable field — "soporte de evidencia, no es una declaración de conformidad" — on every row, every export, every tier, plus a new `scripts/verify.ts` check that fails the build if any export path produces a file without that line present.
-6. The real pricing conversation with Mauricio: would he pay ~MXN 2,000/cycle, and does he actually export to a market with live buyer-side packaging-documentation pressure. Recorded in `DECISIONS.md`, whatever the answer.
-7. Redeploy, document before/after.
+2. `signups` table (Supabase migration + schema), RLS enabled, insert-only for anonymous visitors, no select policy for any app role — the raw export is read by Emilio directly via the Supabase SQL editor, never exposed through the app itself.
+3. `/contacto`: the public capture page — name, how to reach you, role/title (optional), a short message (optional), source captured from the URL's `src` parameter.
+4. The launch playbook (below): strategy, brand voice rules, six content concepts across three series, three finished assets across two formats, tested on two of them.
+5. The real distribution test: 15 LinkedIn messages to real strangers, sent by Emilio, logged with send timestamps separately from the signups table (so even a zero-signup result is distinguishable from a zero-message result).
+6. Redeploy, document before/after, export the real `signups` table regardless of what it contains.
 
-## 5. Mockup
+## 5. The launch playbook
 
-`docs/mockup_w14_pricing.png`: the `/pricing` page showing the two segments, the declared-value bands, and the "tested anchor, not a derived price" disclosure line. Drawn from a written description by a script (no image-generation model available this session, same disclosure as Weeks 11–13). Not a screenshot.
+**Strategy.** Audience: the comercio exterior / control de inventario coordinator (section 2). Need: stop a shipment getting held over a packing-list mismatch — the one real, costed incident from Week 14's testing, not a compliance story. Positioning: "revisa tu ciclo antes de que el comprador lo haga por ti." Supporting evidence: the Week 13 real-user sessions (five real coordinators, one real incident each) and Week 14's real pricing conversation. One promise I will not make: that Cuadre satisfies any foreign buyer's formal documentation or conformity requirement — the shadow-clause line on every export already exists specifically to prevent that exact claim from being read into the product.
 
-![mockup](mockup_w14_pricing.png)
+**Brand.** Three voice rules: (1) name a real, specific incident before naming the product — never open with a feature list; (2) every number carries its own status, the same discipline the product enforces on data — a test anchor says so, a real quote says so; (3) no English loanwords where a plain Spanish word exists ("escaneo" not "scan," "ciclo" not "cycle" in copy, even though the code's internal name is `cycle`). One weak line rewritten: "Cuadre optimiza tu cadena de suministro con inteligencia artificial" (vague, sounds like every other pitch) becomes "Si tu último embarque se detuvo por un dato que no cuadraba, esto es para ti" (names the real incident, names the real reader). Palette and type: reused from the live site — slate/blue/amber/green semantic colors already in `components/shell.tsx` and the Tailwind classes across `/pricing` and `/about`, not a new system invented for this week. Visual layout, repeatable: a title line naming the real situation, one amber or blue evidence box with a disclosed number or status, then a single clear next action — the same structure `/pricing` and `/about` already use, reused rather than redesigned.
 
-## 6. Flow: flowchart
+**Creative range — six concepts across three series, two per series.**
+
+| Series | Concept A | Concept B |
+|---|---|---|
+| "El ciclo que se detuvo" (real incident stories) | Mauricio's packing-list mismatch, retold as a short post | A second, hypothetical-but-labeled-as-such incident for a different material (contrast with the real one) |
+| "El número con estatus" (data discipline as a feature) | A side-by-side: a spreadsheet cell with no source vs. a Cuadre export cell labeled "sin sustento" | A short explainer on why an unverified 0% and an unknown value must never look the same |
+| "Antes de que te lo exijan" (pilot urgency, honestly scoped) | A post stating plainly that no Mexican law requires this yet, and why the real pressure some exporters face is their own foreign buyer's packing-list match, not a regulation | A short post addressed directly to a coordinator, not a compliance officer — "si tú eres quien revisa el ciclo, esto es para ti, no para tu jefe" |
+
+Finished this week, one per series, across at least two formats: (1) "El ciclo que se detuvo" as a LinkedIn-ready text post (format: text); (2) "El número con estatus" as a static image card generated from the live `/pricing`-style visual system (format: image); (3) "Antes de que te lo exijan" as the `/contacto` page's own headline and body copy (format: web page, the "shareable venture page" the brief explicitly allows in place of social posts). The other three concepts stay as labeled sketches/headlines, not built out, per the brief's own scope limit.
+
+**Distribution test.** Two of the three finished assets go in front of the real audience: the LinkedIn text post (sent as the body of the 15 cold messages themselves, not a separate public post — the brief permits "a shareable venture page with suitable opt-in outreach" in place of a public account, and a public LinkedIn post would reach people outside the precommitted target roles, diluting rather than testing the channel) and the `/contacto` page itself (the thing every message points to). The image asset is tested informally, shown to one real contact for a reaction, not sent to strangers this week — logged as a sketch-level test, not a claim of real audience data.
+
+**Honest results.** Recorded after Tuesday, from the raw `signups` export and the real send log — not from memory, and not reworded into a better story than the numbers support. Zero response is an explicitly valid, logged result, not a reason to widen the test or quietly add warm contacts to the count.
+
+## 6. Mockup
+
+`docs/mockup_w15_contacto.png`: the `/contacto` page, showing the real-incident headline, the short form (name, contact, role, message), and the honest absence of any sign-in requirement. Drawn from a written description by a script (no image-generation model available this session, same disclosure as Weeks 11–14). Not a screenshot.
+
+## 7. Flow: flowchart
 
 ```mermaid
 flowchart TD
-  A[Visitor opens /pricing] --> B[Picks a segment: export-facing or domestic-only]
-  B --> C[Sees declared-value bands, not cycle-count bands]
-  C --> D[Opens the revenue simulator]
-  D --> E[Enters customers, cycles per year, price band]
-  E --> F[Simulator computes monthly and annual projection]
-  F --> G[Visitor saves the scenario]
-  G --> H[Scenario persists in the scenarios table]
-  H --> I[Visitor reloads, sees saved scenario again]
-  C --> J[Visitor reads /about 10:1 memo: measured vs unmeasured, stated plainly]
+  A[Emilio sends 15 real LinkedIn messages] --> B[Stranger clicks link with src=linkedin_cold]
+  B --> C[Opens /contacto, no sign-in required]
+  C --> D[Fills name, contact method, role, optional message]
+  D --> E[Submits: server validates input]
+  E --> F[Row written to signups table, source tagged, timestamped]
+  F --> G[Emilio exports raw table via Supabase SQL editor]
+  G --> H[Honest results written from the export, not memory]
 ```
 
-## 7. Flow: who does what (swimlane)
+## 8. Flow: who does what (swimlane)
 
 ```mermaid
 sequenceDiagram
-  actor V as Visitor (prospective payer)
-  participant P as Cuadre (/pricing, simulator)
-  participant D as Cuadre (database)
-  participant E as Cuadre (evidence export)
-  V->>P: opens pricing, picks a segment and a band
-  V->>P: enters simulator assumptions
-  P->>V: monthly and annual projection, assumptions visible
-  V->>P: saves scenario
-  P->>D: scenario stored, scoped to the visitor's session
-  D->>V: scenario reloads on return
-  Note over E: unrelated to pricing UI, but same shadow-clause mechanism
-  E->>E: every exported file carries the non-removable evidence-vs-declaration line
+  actor S as Stranger (cold LinkedIn contact)
+  participant L as LinkedIn (Emilio's messages)
+  participant P as Cuadre (/contacto)
+  participant D as Cuadre (database: signups)
+  actor E as Emilio (exports, reads results)
+  E->>L: sends 15 messages to real strangers only
+  L->>S: message with link tagged src=linkedin_cold
+  S->>P: opens link, no sign-in
+  S->>P: submits name, contact, role, message
+  P->>D: inserts a timestamped, source-tagged row
+  E->>D: exports raw table via Supabase SQL editor (not through the app)
+  Note over E: honest results come from this export, not from memory of the week
 ```
 
-## 8. Benchmark
+## 9. Benchmark
 
-The best existing pricing model for this shape of value is **parametric insurance** (products like FloodFlash), which prices by value-at-risk rather than frequency of use — exactly the logic an averted-incident argument needs, and the model this week's fight landed on only after dropping a SaaS-tier reflex twice. Adjacent compliance software — **Avetta** and **Veriforce** — price per supplier or per audit, scaling with exposure, not a flat seat license, which is further evidence that value-banded pricing is normal in compliance software generally, not something invented for this memo. Neither exists in this shape for Mexican packaging/circular-economy compliance. What doesn't translate is not the pricing logic — it's the trigger: global players price against a live, enforced obligation; Mexico's own obligation still isn't published, so the real local market today is the narrow slice of producers already facing a foreign buyer's documentation demand, not the whole addressable set.
+Vendor-aggregated 2026 data (Belkins and adjacent sales-tooling sources) puts cold LinkedIn message reply rates at roughly 5-15% typically, averaging 10-11%, with good performers at 25-35%; B2B SaaS specifically is flagged as the most saturated, lowest-reply segment, under 5%. No Mexican- or Spanish-language-specific benchmark was found — the honest translation step is to treat Cuadre's own 15 messages as a first real data point rather than a test against someone else's number: at n=15, the benchmark's own range predicts 0-2 replies, so zero would be within normal variance, not evidence the method failed. What the global data can't tell us, and this week's test is actually for: whether a Mexican SME coordinator responds differently to a Spanish-language cold message naming a real, specific incident, versus the generic English-language SaaS pitches the benchmark data is mostly drawn from.
 
-## 9. The long view (3 years)
+## 10. The long view (3 years)
 
-Unchanged in substance from `CHARTER.md`'s north star — a timed, honest 10:1 ratio against a real baseline — sharpened by this week's finding: a durable pricing model for Cuadre will likely need two genuinely different products under one roof, a low-friction export-compliance-support tool priced against shipment value for the urgent segment, and a different, probably much cheaper or free, internal-record-keeping tool for the domestic-only segment that has no live trigger yet. Collapsing those into one price would either overcharge the segment with no urgency or undercharge the one that has a real, event-driven reason to pay. Explicitly out of scope to build this week — logged so it isn't forgotten, not solved by accident.
+Unchanged in substance from `CHARTER.md` and Week 14's packet: a durable channel, once proven, likely needs to split the same way the pricing segments did — a direct, incident-led message to coordinators for the domestic/packing-list-accuracy case, and a separate, compliance-framed message for the (still unconfirmed) segment of exporters facing real EU/California buyer pressure. Collapsing both into one generic pitch would dilute the one real, evidence-backed promise this week's test actually has. Explicitly out of scope to build this week — logged so it isn't forgotten, not solved by accident.
 
-## 10. Scope cut: what I am NOT building this week
+## 11. Scope cut: what I am NOT building this week
 
-- No real billing integration (Stripe metered billing, invoicing) — commodity mechanics with nothing yet to bill against.
-- No claim that Cuadre's evidence export satisfies PPWR's declaration-of-conformity or technical-documentation requirement — it supports a compliance file; it is not one, and the export says so, enforced, not just claimed in copy.
-- No confirmed second real pricing conversation — one real contact, one segment tested at most. The brief states this as the honest open state of Week 14, not a quietly assumed pass on both segments.
-- No CRM, no sales pipeline, no lead capture beyond what's needed to record the one real conversation.
-- No real company data. Demo data in the simulator is invented and labeled, same as every prior week.
+- No automated follow-up sequence, drip campaign, or CRM — 15 messages, sent and logged by hand, once.
+- No public social media account or post — the brief explicitly allows a shareable venture page with opt-in outreach in its place, and a public post would reach people outside the precommitted target roles.
+- No claim that a signup equals a sale, or that zero signups means the product has no market — this week tests the pipe, not the market size.
+- No warm contacts in the cold-test count, under any circumstance — the Blueprint's own condition.
+- No real personal data in any demo or seed; the `signups` table itself will hold real contact information from real people who opted in, which is why it has no select policy exposed through the app at all, not even to a signed-in Cuadre user.
 
-## 11. Architecture and stack
+## 12. Architecture and stack
 
 | Layer | Choice |
 |---|---|
 | Frontend | Next.js App Router, Tailwind, Spanish screens (reused) |
-| Auth | Supabase Auth, Google sign-in (reused) |
-| Database | Supabase Postgres, RLS on every table; versions and decisions append-only |
-| Engine | Pure TypeScript functions for the simulator math, deterministic, no AI inside |
-| New this week | A `scenarios` table (inputs, computed projection, user id, timestamp) — the stack-floor addition: working calculator logic with saved scenarios |
-| Hosting | Vercel Hobby, domain `cuadre.dev` |
+| Auth | None required for `/contacto` — the whole point this week is a path that does not gate on sign-in |
+| Database | Supabase Postgres; `signups` table, RLS enabled, insert-only for the `anon` role, no select policy for any app role |
+| New this week | `signups` table (name, contact, role, message, source, created_at) — the stack-floor-equivalent addition: a real, testable capture mechanism |
+| Hosting | Vercel Hobby, domain `cuadre.dev` (reused) |
 
-## 12. Test plan
+## 13. Test plan
 
-**Mechanical pass.** Reuse the Week 13 offline checks (110 checks); add checks for the simulator math (given fixed inputs, exact projection), the scenario save/reload round-trip, and the new evidence-export shadow-clause line (fails the build if any export path omits it).
+**Mechanical pass.** Reuse the Week 14 offline checks (130 checks); add checks for the signup input validation (length limits, required vs. optional fields, source defaulting correctly when the URL parameter is absent).
 
-**Real-human pass (Layer 1 this week — a synthetic persona, not a sixth real session).** A fresh-chat persona built from the Week 13 real-user evidence, walked through `/pricing` and the simulator as a coordinator who is NOT the budget holder, to find where the pricing page itself confuses the wrong audience (a coordinator reading a page meant for her boss). Findings logged in `PERSONA_EmilioGomez.pdf` (this week).
+**Persona pass (Layer 1, synthetic, not a real session).** A fresh-chat persona built from Week 13's real-user evidence — a skeptical comercio exterior coordinator who has never heard of Cuadre, arriving cold with no context — walked through `/contacto` to find where the page itself confuses or loses someone with zero prior exposure to the product. Findings logged in `PERSONA_EmilioGomez.pdf` (this week).
 
-**The one real conversation that matters more than the persona test.** Mauricio, this week: would he pay ~MXN 2,000/cycle, and is he actually in the export-facing segment. Logged in `DECISIONS.md` regardless of outcome.
+**The one real test that matters more than the persona pass.** 15 real LinkedIn messages to real strangers, sent by end of day Tuesday 24 November, logged with send timestamps; whatever the `signups` table shows afterward, exported raw and reported honestly, including zero.
 
 ### Evidence that the packet came before the code
 
 | Commit | Time | What |
 |---|---|---|
-| `46c5ba4` | 15 Nov 2026, 01:09 | This packet (docs/PACKET.md, docs/PACKET_W13.md archive, docs/mockup_w14_pricing.png) — committed before any Week 14 code |
-| `528b9a1` | 15 Nov 2026 | Shadow-clause export fix (lib/export.ts, scripts/verify.ts) — before /pricing itself was built |
-| `e089650` | 15 Nov 2026 | /pricing, simulator, saved scenarios, scenarios table, /about 10:1 memo — 128 checks |
-| `7ee4bac` | 15 Nov 2026 | Real pricing conversation with Mauricio, logged in DECISIONS.md |
-| `6c95f63` | 15 Nov 2026 | Persona-pass fix: simulator display clamped to the same ceiling the database enforces — 130 checks |
+| (filled at close) | | This packet |
